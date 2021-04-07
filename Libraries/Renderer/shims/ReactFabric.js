@@ -6,7 +6,6 @@
  *
  * @format
  * @flow
- * @generated SignedSource<<10abcc819e7817b4fb0aa307d047a19e>>
  */
 
 'use strict';
@@ -24,10 +23,6 @@ if (__DEV__) {
   ReactFabric = require('../implementations/ReactFabric-prod');
 }
 
-if (global.RN$Bridgeless) {
-  global.RN$stopSurface = ReactFabric.stopSurface;
-} else {
-  BatchedBridge.registerCallableModule('ReactFabric', ReactFabric);
-}
+BatchedBridge.registerCallableModule('ReactFabric', ReactFabric);
 
 module.exports = (ReactFabric: ReactNativeType);

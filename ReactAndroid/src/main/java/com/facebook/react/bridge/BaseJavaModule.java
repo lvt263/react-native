@@ -1,10 +1,9 @@
-/*
+/**
  * Copyright (c) Facebook, Inc. and its affiliates.
  *
- * This source code is licensed under the MIT license found in the
- * LICENSE file in the root directory of this source tree.
+ * <p>This source code is licensed under the MIT license found in the LICENSE file in the root
+ * directory of this source tree.
  */
-
 package com.facebook.react.bridge;
 
 import androidx.annotation.Nullable;
@@ -61,18 +60,16 @@ public abstract class BaseJavaModule implements NativeModule {
   }
 
   @Override
-  public void onCatalystInstanceDestroy() {}
+  public void onCatalystInstanceDestroy() {
+    // do nothing
+  }
 
   public boolean hasConstants() {
     return false;
   }
 
-  /**
-   * The CatalystInstance is going away with Venice. Therefore, the TurboModule infra introduces the
-   * invalidate() method to allow NativeModules to clean up after themselves.
-   */
-  @Override
+  // Cleanup Logic for TurboModules
   public void invalidate() {
-    onCatalystInstanceDestroy();
+    // Do nothing
   }
 }

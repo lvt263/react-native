@@ -1,16 +1,15 @@
-/*
+/**
  * Copyright (c) Facebook, Inc. and its affiliates.
  *
- * This source code is licensed under the MIT license found in the
- * LICENSE file in the root directory of this source tree.
+ * <p>This source code is licensed under the MIT license found in the LICENSE file in the root
+ * directory of this source tree.
  */
-
 package com.facebook.react.views.textinput;
 
-import androidx.annotation.Nullable;
 import com.facebook.react.bridge.Arguments;
 import com.facebook.react.bridge.WritableMap;
 import com.facebook.react.uimanager.events.Event;
+import com.facebook.react.uimanager.events.RCTEventEmitter;
 
 /** Event emitted by EditText native view when the text selection changes. */
 /* package */ class ReactTextInputSelectionEvent extends Event<ReactTextInputSelectionEvent> {
@@ -20,14 +19,8 @@ import com.facebook.react.uimanager.events.Event;
   private int mSelectionStart;
   private int mSelectionEnd;
 
-  @Deprecated
   public ReactTextInputSelectionEvent(int viewId, int selectionStart, int selectionEnd) {
-    this(-1, viewId, selectionStart, selectionEnd);
-  }
-
-  public ReactTextInputSelectionEvent(
-      int surfaceId, int viewId, int selectionStart, int selectionEnd) {
-    super(surfaceId, viewId);
+    super(viewId);
     mSelectionStart = selectionStart;
     mSelectionEnd = selectionEnd;
   }
@@ -37,9 +30,12 @@ import com.facebook.react.uimanager.events.Event;
     return EVENT_NAME;
   }
 
-  @Nullable
   @Override
-  protected WritableMap getEventData() {
+  public void dispatch(RCTEventEmitter rctEventEmitter) {
+    rctEventEmitter.receiveEvent(getViewTag(), getEventName(), serializeEventData());
+  }
+
+  private WritableMap serializeEventData() {
     WritableMap eventData = Arguments.createMap();
 
     WritableMap selectionData = Arguments.createMap();

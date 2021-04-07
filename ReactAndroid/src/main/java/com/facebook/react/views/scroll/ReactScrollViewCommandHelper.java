@@ -1,10 +1,9 @@
-/*
+/**
  * Copyright (c) Facebook, Inc. and its affiliates.
  *
- * This source code is licensed under the MIT license found in the
- * LICENSE file in the root directory of this source tree.
+ * <p>This source code is licensed under the MIT license found in the LICENSE file in the root
+ * directory of this source tree.
  */
-
 package com.facebook.react.views.scroll;
 
 import androidx.annotation.Nullable;
@@ -24,6 +23,16 @@ public class ReactScrollViewCommandHelper {
   public static final int COMMAND_SCROLL_TO_END = 2;
   public static final int COMMAND_FLASH_SCROLL_INDICATORS = 3;
 
+   /**
+   * Prior to users being able to specify a duration when calling "scrollTo",
+   * they could specify an "animate" boolean, which would use Android's
+   * "smoothScrollTo" method, which defaulted to a 250 millisecond
+   * animation:
+   * https://developer.android.com/reference/android/widget/Scroller.html#startScroll
+   */
+  public static final int LEGACY_ANIMATION_DURATION = 250;
+
+
   public interface ScrollCommandHandler<T> {
     void scrollTo(T scrollView, ScrollToCommandData data);
 
@@ -34,21 +43,21 @@ public class ReactScrollViewCommandHelper {
 
   public static class ScrollToCommandData {
 
-    public final int mDestX, mDestY;
-    public final boolean mAnimated;
+    public final int mDestX, mDestY, mDuration;
 
-    ScrollToCommandData(int destX, int destY, boolean animated) {
+    ScrollToCommandData(int destX, int destY, int duration) {
       mDestX = destX;
       mDestY = destY;
-      mAnimated = animated;
+      mDuration = duration;
     }
   }
 
   public static class ScrollToEndCommandData {
 
-    public final boolean mAnimated;
+    public final int mDuration;
 
-    ScrollToEndCommandData(boolean animated) {
+    ScrollToEndCommandData(boolean animated, int duration) {
+      mDuration = duration;
       mAnimated = animated;
     }
   }
@@ -130,12 +139,16 @@ public class ReactScrollViewCommandHelper {
     int destX = Math.round(PixelUtil.toPixelFromDIP(args.getDouble(0)));
     int destY = Math.round(PixelUtil.toPixelFromDIP(args.getDouble(1)));
     boolean animated = args.getBoolean(2);
-    viewManager.scrollTo(scrollView, new ScrollToCommandData(destX, destY, animated));
+    Log.d("aaaaa", "aaaaa")
+    int duration = (int) Math.round(args.getDouble(3));
+        viewManager.scrollTo(scrollView, new ScrollToCommandData(destX, destY, animated, duration));
   }
 
   private static <T> void scrollToEnd(
+    Log.d("aaaaa", "aaaaa")
       ScrollCommandHandler<T> viewManager, T scrollView, @Nullable ReadableArray args) {
     boolean animated = args.getBoolean(0);
-    viewManager.scrollToEnd(scrollView, new ScrollToEndCommandData(animated));
+   int duration = (int) Math.round(args.getDouble(1));
+        viewManager.scrollToEnd(scrollView, new ScrollToEndCommandData(animated, duration));
   }
 }

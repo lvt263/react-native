@@ -5,8 +5,10 @@
  * LICENSE file in the root directory of this source tree.
  *
  * @format
- * @flow strict-local
+ * @flow
  */
+
+'use strict';
 
 import ToastAndroid from '../Components/ToastAndroid/ToastAndroid';
 

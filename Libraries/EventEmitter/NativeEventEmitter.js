@@ -4,111 +4,66 @@
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  *
- * @flow strict-local
  * @format
+ * @flow
  */
 
 'use strict';
 
-import {
-  type EventSubscription,
-  type IEventEmitter,
-} from '../vendor/emitter/EventEmitter';
-import Platform from '../Utilities/Platform';
-import RCTDeviceEventEmitter from './RCTDeviceEventEmitter';
-import invariant from 'invariant';
+const EventEmitter = require('../vendor/emitter/EventEmitter');
+const Platform = require('../Utilities/Platform');
+const RCTDeviceEventEmitter = require('./RCTDeviceEventEmitter');
 
-type NativeModule = $ReadOnly<
-  interface {
-    addListener: (eventType: string) => void,
-    removeListeners: (count: number) => void,
-  },
->;
+const invariant = require('invariant');
 
-export type {EventSubscription};
+import type EmitterSubscription from '../vendor/emitter/EmitterSubscription';
+
+type NativeModule = {
+  +addListener: (eventType: string) => void,
+  +removeListeners: (count: number) => void,
+};
 
 /**
- * `NativeEventEmitter` is intended for use by Native Modules to emit events to
- * JavaScript listeners. If a `NativeModule` is supplied to the constructor, it
- * will be notified (via `addListener` and `removeListeners`) when the listener
- * count changes to manage "native memory".
- *
- * Currently, all native events are fired via a global `RCTDeviceEventEmitter`.
- * This means event names must be globally unique, and it means that call sites
- * can theoretically listen to `RCTDeviceEventEmitter` (although discouraged).
+ * Abstract base class for implementing event-emitting modules. This implements
+ * a subset of the standard EventEmitter node module API.
  */
-export default class NativeEventEmitter<TEventToArgsMap: {...}>
-  implements IEventEmitter<TEventToArgsMap> {
+class NativeEventEmitter extends EventEmitter {
   _nativeModule: ?NativeModule;
 
   constructor(nativeModule: ?NativeModule) {
+    super(RCTDeviceEventEmitter.sharedSubscriber);
     if (Platform.OS === 'ios') {
-      invariant(
-        nativeModule != null,
-        '`new NativeEventEmitter()` requires a non-null argument.',
-      );
+      invariant(nativeModule, 'Native module cannot be null.');
       this._nativeModule = nativeModule;
     }
   }
 
-  addListener<TEvent: $Keys<TEventToArgsMap>>(
-    eventType: TEvent,
-    listener: (...args: $ElementType<TEventToArgsMap, TEvent>) => mixed,
-    context?: mixed,
-  ): EventSubscription {
-    this._nativeModule?.addListener(eventType);
-    let subscription: ?EventSubscription = RCTDeviceEventEmitter.addListener(
-      eventType,
-      listener,
-      context,
-    );
-
-    return {
-      remove: () => {
-        if (subscription != null) {
-          this._nativeModule?.removeListeners(1);
-          // $FlowFixMe[incompatible-use]
-          subscription.remove();
-          subscription = null;
-        }
-      },
-    };
+  addListener(
+    eventType: string,
+    listener: Function,
+    context: ?Object,
+  ): EmitterSubscription {
+    if (this._nativeModule != null) {
+      this._nativeModule.addListener(eventType);
+    }
+    return super.addListener(eventType, listener, context);
   }
 
-  /**
-   * @deprecated Use `remove` on the EventSubscription from `addListener`.
-   */
-  removeListener<TEvent: $Keys<TEventToArgsMap>>(
-    eventType: TEvent,
-    listener: (...args: $ElementType<TEventToArgsMap, TEvent>) => mixed,
-  ): void {
-    this._nativeModule?.removeListeners(1);
-    // NOTE: This will report a deprecation notice via `console.error`.
-    // $FlowFixMe[prop-missing] - `removeListener` exists but is deprecated.
-    RCTDeviceEventEmitter.removeListener(eventType, listener);
+  removeAllListeners(eventType: string) {
+    invariant(eventType, 'eventType argument is required.');
+    const count = this.listeners(eventType).length;
+    if (this._nativeModule != null) {
+      this._nativeModule.removeListeners(count);
+    }
+    super.removeAllListeners(eventType);
   }
 
-  emit<TEvent: $Keys<TEventToArgsMap>>(
-    eventType: TEvent,
-    ...args: $ElementType<TEventToArgsMap, TEvent>
-  ): void {
-    // Generally, `RCTDeviceEventEmitter` is directly invoked. But this is
-    // included for completeness.
-    RCTDeviceEventEmitter.emit(eventType, ...args);
-  }
-
-  removeAllListeners<TEvent: $Keys<TEventToArgsMap>>(
-    eventType?: ?TEvent,
-  ): void {
-    invariant(
-      eventType != null,
-      '`NativeEventEmitter.removeAllListener()` requires a non-null argument.',
-    );
-    this._nativeModule?.removeListeners(this.listenerCount(eventType));
-    RCTDeviceEventEmitter.removeAllListeners(eventType);
-  }
-
-  listenerCount<TEvent: $Keys<TEventToArgsMap>>(eventType: TEvent): number {
-    return RCTDeviceEventEmitter.listenerCount(eventType);
+  removeSubscription(subscription: EmitterSubscription) {
+    if (this._nativeModule != null) {
+      this._nativeModule.removeListeners(1);
+    }
+    super.removeSubscription(subscription);
   }
 }
+
+module.exports = NativeEventEmitter;

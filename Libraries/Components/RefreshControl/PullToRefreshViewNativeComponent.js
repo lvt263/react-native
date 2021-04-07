@@ -5,21 +5,17 @@
  * LICENSE file in the root directory of this source tree.
  *
  * @format
- * @flow strict-local
+ * @flow
  */
 
-import type {
-  DirectEventHandler,
-  Float,
-  WithDefault,
-} from '../../Types/CodegenTypes';
-import type {ColorValue} from '../../StyleSheet/StyleSheet';
+'use strict';
+
+import type {DirectEventHandler, WithDefault} from '../../Types/CodegenTypes';
+import type {ColorValue} from '../../StyleSheet/StyleSheetTypes';
 import type {ViewProps} from '../View/ViewPropTypes';
-import * as React from 'react';
 
 import codegenNativeComponent from '../../Utilities/codegenNativeComponent';
-import type {HostComponent} from '../../Renderer/shims/ReactNativeTypes';
-import codegenNativeCommands from 'react-native/Libraries/Utilities/codegenNativeCommands';
+import {type NativeComponentType} from '../../Utilities/codegenNativeComponent';
 
 type NativeProps = $ReadOnly<{|
   ...ViewProps,
@@ -36,10 +32,6 @@ type NativeProps = $ReadOnly<{|
    * The title displayed under the refresh indicator.
    */
   title?: WithDefault<string, null>,
-  /**
-   * Progress view top offset
-   */
-  progressViewOffset?: WithDefault<Float, 0>,
 
   /**
    * Called when the view starts refreshing.
@@ -52,20 +44,6 @@ type NativeProps = $ReadOnly<{|
   refreshing: boolean,
 |}>;
 
-type ComponentType = HostComponent<NativeProps>;
-
-interface NativeCommands {
-  +setNativeRefreshing: (
-    viewRef: React.ElementRef<ComponentType>,
-    refreshing: boolean,
-  ) => void;
-}
-
-export const Commands: NativeCommands = codegenNativeCommands<NativeCommands>({
-  supportedCommands: ['setNativeRefreshing'],
-});
-
 export default (codegenNativeComponent<NativeProps>('PullToRefreshView', {
   paperComponentName: 'RCTRefreshControl',
-  excludedPlatforms: ['android'],
-}): HostComponent<NativeProps>);
+}): NativeComponentType<NativeProps>);

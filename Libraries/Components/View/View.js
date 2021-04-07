@@ -8,11 +8,10 @@
  * @flow strict-local
  */
 
-import type {ViewProps} from './ViewPropTypes';
+'use strict';
 
-const React = require('react');
-import ViewNativeComponent from './ViewNativeComponent';
-const TextAncestor = require('../../Text/TextAncestor');
+import type {ViewProps} from './ViewPropTypes';
+import type {ViewNativeComponentType} from './ViewNativeComponent';
 
 export type Props = ViewProps;
 
@@ -21,19 +20,7 @@ export type Props = ViewProps;
  * supports layout with flexbox, style, some touch handling, and accessibility
  * controls.
  *
- * @see https://reactnative.dev/docs/view.html
+ * @see http://facebook.github.io/react-native/docs/view.html
  */
-const View: React.AbstractComponent<
-  ViewProps,
-  React.ElementRef<typeof ViewNativeComponent>,
-> = React.forwardRef((props: ViewProps, forwardedRef) => {
-  return (
-    <TextAncestor.Provider value={false}>
-      <ViewNativeComponent {...props} ref={forwardedRef} />
-    </TextAncestor.Provider>
-  );
-});
-
-View.displayName = 'View';
-
-module.exports = View;
+module.exports = (require('./ViewNativeComponent')
+  .default: ViewNativeComponentType);

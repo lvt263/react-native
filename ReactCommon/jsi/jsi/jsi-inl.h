@@ -1,10 +1,9 @@
 /*
  * Copyright (c) Facebook, Inc. and its affiliates.
  *
- * This source code is licensed under the MIT license found in the
- * LICENSE file in the root directory of this source tree.
+ * This source code is licensed under the MIT license found in the LICENSE
+ * file in the root directory of this source tree.
  */
-
 #pragma once
 
 namespace facebook {
@@ -30,7 +29,7 @@ inline Value toValue(Runtime& runtime, const char* str) {
   return String::createFromAscii(runtime, str);
 }
 inline Value toValue(Runtime& runtime, const std::string& str) {
-  return String::createFromUtf8(runtime, str);
+  return String::createFromAscii(runtime, str);
 }
 template <typename T>
 inline Value toValue(Runtime& runtime, const T& other) {
@@ -63,10 +62,6 @@ void throwJSError(Runtime&, const char* msg);
 template <typename T>
 inline T Runtime::make(Runtime::PointerValue* pv) {
   return T(pv);
-}
-
-inline Runtime::PointerValue* Runtime::getPointerValue(jsi::Pointer& pointer) {
-  return pointer.ptr_;
 }
 
 inline const Runtime::PointerValue* Runtime::getPointerValue(

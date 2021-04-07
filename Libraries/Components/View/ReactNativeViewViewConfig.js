@@ -8,16 +8,15 @@
  * @format
  */
 
-import {type ViewConfig} from '../../Renderer/shims/ReactNativeTypes';
+'use strict';
 import ReactNativeViewViewConfigAndroid from './ReactNativeViewViewConfigAndroid';
-import {Platform} from 'react-native';
 
-const ReactNativeViewConfig: ViewConfig = {
+const ReactNativeViewConfig = {
   uiViewClassName: 'RCTView',
   baseModuleName: null,
   Manager: 'ViewManager',
-  Commands: {},
-  Constants: {},
+  Commands: ({}: $TEMPORARY$object<{||}>),
+  Constants: ({}: $TEMPORARY$object<{||}>),
   bubblingEventTypes: {
     ...ReactNativeViewViewConfigAndroid.bubblingEventTypes,
     topBlur: {
@@ -122,9 +121,8 @@ const ReactNativeViewConfig: ViewConfig = {
     accessibilityLabel: true,
     accessibilityLiveRegion: true,
     accessibilityRole: true,
-    accessibilityStates: true, // TODO: Can be removed after next release
+    accessibilityStates: true,
     accessibilityState: true,
-    accessibilityValue: true,
     accessibilityViewIsModal: true,
     accessible: true,
     alignContent: true,
@@ -171,7 +169,7 @@ const ReactNativeViewConfig: ViewConfig = {
     flexShrink: true,
     flexWrap: true,
     height: true,
-    hitSlop: {diff: require('../../Utilities/differ/insetsDiffer')},
+    hitSlop: {diff: (require('../../Utilities/differ/insetsDiffer'): any)},
     importantForAccessibility: true,
     justifyContent: true,
     left: true,
@@ -322,10 +320,7 @@ const ReactNativeViewConfig: ViewConfig = {
       textTransform: true,
       tintColor: {process: require('../../StyleSheet/processColor')},
       top: true,
-      transform:
-        Platform.OS === 'ios'
-          ? {diff: require('../../Utilities/differ/matricesDiffer')}
-          : {process: require('../../StyleSheet/processTransform')},
+      transform: {diff: require('../../Utilities/differ/matricesDiffer')},
       transformMatrix: true,
       translateX: true,
       translateY: true,
@@ -335,10 +330,7 @@ const ReactNativeViewConfig: ViewConfig = {
     },
     testID: true,
     top: true,
-    transform:
-      Platform.OS === 'ios'
-        ? {diff: require('../../Utilities/differ/matricesDiffer')}
-        : {process: require('../../StyleSheet/processTransform')},
+    transform: {diff: require('../../Utilities/differ/matricesDiffer')},
     translateX: true,
     translateY: true,
     width: true,

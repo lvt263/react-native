@@ -1,4 +1,4 @@
-/*
+/**
  * Copyright (c) Facebook, Inc. and its affiliates.
  *
  * This source code is licensed under the MIT license found in the
@@ -22,13 +22,6 @@
   }
   _touchHandler = [RCTSurfaceTouchHandler new];
 
-#if defined(__IPHONE_OS_VERSION_MAX_ALLOWED) && defined(__IPHONE_13_0) && \
-    __IPHONE_OS_VERSION_MAX_ALLOWED >= __IPHONE_13_0
-  if (@available(iOS 13.0, *)) {
-    self.modalInPresentation = YES;
-  }
-#endif
-
   return self;
 }
 
@@ -47,6 +40,7 @@
   [_touchHandler attachToView:self.view];
 }
 
+#if !TARGET_OS_TV
 - (UIStatusBarStyle)preferredStatusBarStyle
 {
   return [RCTSharedApplication() statusBarStyle];
@@ -61,6 +55,20 @@
 - (BOOL)prefersStatusBarHidden
 {
   return [RCTSharedApplication() isStatusBarHidden];
+}
+
+- (void)dismissViewControllerAnimated:(BOOL)flag completion:(void (^)())completion
+{
+  UIView *snapshot = [self.view snapshotViewAfterScreenUpdates:NO];
+  [self.view addSubview:snapshot];
+
+  [super dismissViewControllerAnimated:flag
+                            completion:^{
+                              [snapshot removeFromSuperview];
+                              if (completion) {
+                                completion();
+                              }
+                            }];
 }
 
 #if RCT_DEV
@@ -81,5 +89,6 @@
   return _supportedInterfaceOrientations;
 }
 #endif // RCT_DEV
+#endif // !TARGET_OS_TV
 
 @end

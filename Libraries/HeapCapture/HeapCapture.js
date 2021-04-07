@@ -5,10 +5,12 @@
  * LICENSE file in the root directory of this source tree.
  *
  * @format
- * @flow strict
+ * @flow strict-local
  */
 
-import NativeJSCHeapCapture from './NativeJSCHeapCapture';
+'use strict';
+
+import NativeHeapCapture from './NativeHeapCapture';
 
 const HeapCapture = {
   captureHeap: function(path: string) {
@@ -20,8 +22,8 @@ const HeapCapture = {
       console.log('HeapCapture.captureHeap error: ' + e.toString());
       error = e.toString();
     }
-    if (NativeJSCHeapCapture) {
-      NativeJSCHeapCapture.captureComplete(path, error);
+    if (NativeHeapCapture) {
+      NativeHeapCapture.captureComplete(path, error);
     }
   },
 };

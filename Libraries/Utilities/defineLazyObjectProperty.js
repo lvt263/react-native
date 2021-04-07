@@ -5,7 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  *
  * @format
- * @flow strict
+ * @flow
  */
 
 'use strict';
@@ -14,13 +14,12 @@
  * Defines a lazily evaluated property on the supplied `object`.
  */
 function defineLazyObjectProperty<T>(
-  object: interface {},
+  object: Object,
   name: string,
   descriptor: {
     get: () => T,
     enumerable?: boolean,
     writable?: boolean,
-    ...
   },
 ): void {
   const {get} = descriptor;

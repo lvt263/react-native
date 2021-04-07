@@ -1,4 +1,4 @@
-/*
+/**
  * Copyright (c) Facebook, Inc. and its affiliates.
  *
  * This source code is licensed under the MIT license found in the
@@ -58,10 +58,8 @@
   if (options.activityIndicatorComponentFactory == nil || RCTSurfaceStageIsRunning(state.surface.stage)) {
     component = surfaceHostingComponent;
   } else {
-    component = CK::OverlayLayoutComponentBuilder()
-    .component(surfaceHostingComponent)
-    .overlay(options.activityIndicatorComponentFactory())
-    .build();
+    component = [CKOverlayLayoutComponent newWithComponent:surfaceHostingComponent
+                                                   overlay:options.activityIndicatorComponentFactory()];
   }
 
   return [super newWithComponent:component];

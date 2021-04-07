@@ -1,14 +1,6 @@
-/*
- * Copyright (c) Facebook, Inc. and its affiliates.
- *
- * This source code is licensed under the MIT license found in the
- * LICENSE file in the root directory of this source tree.
- */
+// Copyright 2004-present Facebook. All Rights Reserved.
 
-// using include guards instead of #pragma once due to compile issues
-// with MSVC and BUCK
-#ifndef HERMES_INSPECTOR_CONNECTION_H
-#define HERMES_INSPECTOR_CONNECTION_H
+#pragma once
 
 #include <functional>
 #include <memory>
@@ -16,6 +8,7 @@
 
 #include <hermes/hermes.h>
 #include <hermes/inspector/RuntimeAdapter.h>
+#include <hermes/inspector/chrome/MessageTypes.h>
 #include <jsinspector/InspectorInterfaces.h>
 
 namespace facebook {
@@ -24,7 +17,7 @@ namespace inspector {
 namespace chrome {
 
 /// Connection is a duplex connection between the client and the debugger.
-class INSPECTOR_EXPORT Connection {
+class Connection {
  public:
   /// Connection constructor enables the debugger on the provided runtime. This
   /// should generally called before you start running any JS in the runtime.
@@ -35,7 +28,7 @@ class INSPECTOR_EXPORT Connection {
   ~Connection();
 
   /// getRuntime returns the underlying runtime being debugged.
-  jsi::Runtime &getRuntime();
+  HermesRuntime &getRuntime();
 
   /// getTitle returns the name of the friendly name of the runtime that's shown
   /// to users in Nuclide.
@@ -63,5 +56,3 @@ class INSPECTOR_EXPORT Connection {
 } // namespace inspector
 } // namespace hermes
 } // namespace facebook
-
-#endif // HERMES_INSPECTOR_CONNECTION_H

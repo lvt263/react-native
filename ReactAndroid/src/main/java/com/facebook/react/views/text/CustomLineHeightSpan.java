@@ -1,10 +1,9 @@
-/*
+/**
  * Copyright (c) Facebook, Inc. and its affiliates.
  *
- * This source code is licensed under the MIT license found in the
- * LICENSE file in the root directory of this source tree.
+ * <p>This source code is licensed under the MIT license found in the LICENSE file in the root
+ * directory of this source tree.
  */
-
 package com.facebook.react.views.text;
 
 import android.graphics.Paint;
@@ -17,7 +16,7 @@ import android.text.style.LineHeightSpan;
 public class CustomLineHeightSpan implements LineHeightSpan, ReactSpan {
   private final int mHeight;
 
-  public CustomLineHeightSpan(float height) {
+  CustomLineHeightSpan(float height) {
     this.mHeight = (int) Math.ceil(height);
   }
 

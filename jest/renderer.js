@@ -9,24 +9,18 @@
  * @flow
  */
 
-const React = require('react');
+'use strict';
 
-const ShallowRenderer = require('react-shallow-renderer');
+const React = require('react');
+const ShallowRenderer = require('react-test-renderer/shallow');
 const TestRenderer = require('react-test-renderer');
 
-/* $FlowFixMe[not-a-function] (>=0.125.1 site=react_native_fb) This comment
- * suppresses an error found when Flow v0.125.1 was deployed. To see the error,
- * delete this comment and run Flow. */
 const renderer = new ShallowRenderer();
 
 export const shallow = (Component: React.Element<any>): any => {
   const Wrapper = (): React.Element<any> => Component;
 
   return renderer.render(<Wrapper />);
-};
-
-export const shallowRender = (Component: React.Element<any>): any => {
-  return renderer.render(Component);
 };
 
 export const create = (Component: React.Element<any>): any => {

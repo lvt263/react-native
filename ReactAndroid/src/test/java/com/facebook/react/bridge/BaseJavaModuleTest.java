@@ -1,13 +1,10 @@
-/*
+/**
  * Copyright (c) Facebook, Inc. and its affiliates.
  *
- * This source code is licensed under the MIT license found in the
- * LICENSE file in the root directory of this source tree.
+ * <p>This source code is licensed under the MIT license found in the LICENSE file in the root
+ * directory of this source tree.
  */
-
 package com.facebook.react.bridge;
-
-import static org.mockito.Mockito.when;
 
 import com.facebook.soloader.SoLoader;
 import java.util.List;
@@ -15,6 +12,7 @@ import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.Mockito;
 import org.powermock.api.mockito.PowerMockito;
 import org.powermock.core.classloader.annotations.PowerMockIgnore;
 import org.powermock.core.classloader.annotations.PrepareForTest;
@@ -57,14 +55,14 @@ public class BaseJavaModuleTest {
   @Test(expected = NativeArgumentsParseException.class)
   public void testCallMethodWithoutEnoughArgs() throws Exception {
     int methodId = findMethod("regularMethod", mMethods);
-    when(mArguments.size()).thenReturn(1);
+    Mockito.stub(mArguments.size()).toReturn(1);
     mWrapper.invoke(methodId, mArguments);
   }
 
   @Test
   public void testCallMethodWithEnoughArgs() {
     int methodId = findMethod("regularMethod", mMethods);
-    when(mArguments.size()).thenReturn(2);
+    Mockito.stub(mArguments.size()).toReturn(2);
     mWrapper.invoke(methodId, mArguments);
   }
 
@@ -72,14 +70,14 @@ public class BaseJavaModuleTest {
   public void testCallAsyncMethodWithEnoughArgs() {
     // Promise block evaluates to 2 args needing to be passed from JS
     int methodId = findMethod("asyncMethod", mMethods);
-    when(mArguments.size()).thenReturn(3);
+    Mockito.stub(mArguments.size()).toReturn(3);
     mWrapper.invoke(methodId, mArguments);
   }
 
   @Test
   public void testCallSyncMethod() {
     int methodId = findMethod("syncMethod", mMethods);
-    when(mArguments.size()).thenReturn(2);
+    Mockito.stub(mArguments.size()).toReturn(2);
     mWrapper.invoke(methodId, mArguments);
   }
 

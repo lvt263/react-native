@@ -5,52 +5,40 @@
  * LICENSE file in the root directory of this source tree.
  *
  * @format
- * @flow strict
+ * @noflow
+ * @flow-weak
  * @jsdoc
  */
 
-import NativeAsyncLocalStorage from './NativeAsyncLocalStorage';
-import NativeAsyncSQLiteDBStorage from './NativeAsyncSQLiteDBStorage';
+'use strict';
+
+import NativeAsyncStorage from './NativeAsyncStorage';
 import invariant from 'invariant';
 
 // Use SQLite if available, otherwise file storage.
-const RCTAsyncStorage = NativeAsyncSQLiteDBStorage || NativeAsyncLocalStorage;
-
-type GetRequest = {
-  keys: Array<string>,
-  callback: ?(errors: ?Array<Error>, result: ?Array<Array<string>>) => void,
-  keyIndex: number,
-  resolve: (
-    result?:
-      | void
-      | null
-      | Promise<?Array<Array<string>>>
-      | Array<Array<string>>,
-  ) => void,
-  reject: (error?: mixed) => void,
-};
+const RCTAsyncStorage = NativeAsyncStorage;
 
 /**
  * `AsyncStorage` is a simple, unencrypted, asynchronous, persistent, key-value
  * storage system that is global to the app.  It should be used instead of
  * LocalStorage.
  *
- * See https://reactnative.dev/docs/asyncstorage.html
+ * See http://facebook.github.io/react-native/docs/asyncstorage.html
  */
 const AsyncStorage = {
-  _getRequests: ([]: Array<GetRequest>),
+  _getRequests: ([]: Array<any>),
   _getKeys: ([]: Array<string>),
   _immediate: (null: ?number),
 
   /**
    * Fetches an item for a `key` and invokes a callback upon completion.
    *
-   * See https://reactnative.dev/docs/asyncstorage.html#getitem
+   * See http://facebook.github.io/react-native/docs/asyncstorage.html#getitem
    */
   getItem: function(
     key: string,
     callback?: ?(error: ?Error, result: ?string) => void,
-  ): Promise<?string> {
+  ): Promise {
     invariant(RCTAsyncStorage, 'RCTAsyncStorage not available');
     return new Promise((resolve, reject) => {
       RCTAsyncStorage.multiGet([key], function(errors, result) {
@@ -70,13 +58,13 @@ const AsyncStorage = {
   /**
    * Sets the value for a `key` and invokes a callback upon completion.
    *
-   * See https://reactnative.dev/docs/asyncstorage.html#setitem
+   * See http://facebook.github.io/react-native/docs/asyncstorage.html#setitem
    */
   setItem: function(
     key: string,
     value: string,
     callback?: ?(error: ?Error) => void,
-  ): Promise<void> {
+  ): Promise {
     invariant(RCTAsyncStorage, 'RCTAsyncStorage not available');
     return new Promise((resolve, reject) => {
       RCTAsyncStorage.multiSet([[key, value]], function(errors) {
@@ -85,7 +73,7 @@ const AsyncStorage = {
         if (errs) {
           reject(errs[0]);
         } else {
-          resolve();
+          resolve(null);
         }
       });
     });
@@ -94,12 +82,12 @@ const AsyncStorage = {
   /**
    * Removes an item for a `key` and invokes a callback upon completion.
    *
-   * See https://reactnative.dev/docs/asyncstorage.html#removeitem
+   * See http://facebook.github.io/react-native/docs/asyncstorage.html#removeitem
    */
   removeItem: function(
     key: string,
     callback?: ?(error: ?Error) => void,
-  ): Promise<void> {
+  ): Promise {
     invariant(RCTAsyncStorage, 'RCTAsyncStorage not available');
     return new Promise((resolve, reject) => {
       RCTAsyncStorage.multiRemove([key], function(errors) {
@@ -108,7 +96,7 @@ const AsyncStorage = {
         if (errs) {
           reject(errs[0]);
         } else {
-          resolve();
+          resolve(null);
         }
       });
     });
@@ -120,13 +108,13 @@ const AsyncStorage = {
    *
    * **NOTE:** This is not supported by all native implementations.
    *
-   * See https://reactnative.dev/docs/asyncstorage.html#mergeitem
+   * See http://facebook.github.io/react-native/docs/asyncstorage.html#mergeitem
    */
   mergeItem: function(
     key: string,
     value: string,
     callback?: ?(error: ?Error) => void,
-  ): Promise<void> {
+  ): Promise {
     invariant(RCTAsyncStorage, 'RCTAsyncStorage not available');
     return new Promise((resolve, reject) => {
       RCTAsyncStorage.multiMerge([[key, value]], function(errors) {
@@ -135,7 +123,7 @@ const AsyncStorage = {
         if (errs) {
           reject(errs[0]);
         } else {
-          resolve();
+          resolve(null);
         }
       });
     });
@@ -146,9 +134,9 @@ const AsyncStorage = {
    * don't want to call this; use `removeItem` or `multiRemove` to clear only
    * your app's keys.
    *
-   * See https://reactnative.dev/docs/asyncstorage.html#clear
+   * See http://facebook.github.io/react-native/docs/asyncstorage.html#clear
    */
-  clear: function(callback?: ?(error: ?Error) => void): Promise<void> {
+  clear: function(callback?: ?(error: ?Error) => void): Promise {
     invariant(RCTAsyncStorage, 'RCTAsyncStorage not available');
     return new Promise((resolve, reject) => {
       RCTAsyncStorage.clear(function(error) {
@@ -156,7 +144,7 @@ const AsyncStorage = {
         if (error && convertError(error)) {
           reject(convertError(error));
         } else {
-          resolve();
+          resolve(null);
         }
       });
     });
@@ -165,11 +153,11 @@ const AsyncStorage = {
   /**
    * Gets *all* keys known to your app; for all callers, libraries, etc.
    *
-   * See https://reactnative.dev/docs/asyncstorage.html#getallkeys
+   * See http://facebook.github.io/react-native/docs/asyncstorage.html#getallkeys
    */
   getAllKeys: function(
     callback?: ?(error: ?Error, keys: ?Array<string>) => void,
-  ): Promise<?Array<string>> {
+  ): Promise {
     invariant(RCTAsyncStorage, 'RCTAsyncStorage not available');
     return new Promise((resolve, reject) => {
       RCTAsyncStorage.getAllKeys(function(error, keys) {
@@ -196,7 +184,7 @@ const AsyncStorage = {
   /**
    * Flushes any pending requests using a single batch call to get the data.
    *
-   * See https://reactnative.dev/docs/asyncstorage.html#flushgetrequests
+   * See http://facebook.github.io/react-native/docs/asyncstorage.html#flushgetrequests
    * */
   flushGetRequests: function(): void {
     const getRequests = this._getRequests;
@@ -235,12 +223,12 @@ const AsyncStorage = {
    * inputs. Your callback will be invoked with an array of corresponding
    * key-value pairs found.
    *
-   * See https://reactnative.dev/docs/asyncstorage.html#multiget
+   * See http://facebook.github.io/react-native/docs/asyncstorage.html#multiget
    */
   multiGet: function(
     keys: Array<string>,
     callback?: ?(errors: ?Array<Error>, result: ?Array<Array<string>>) => void,
-  ): Promise<?Array<Array<string>>> {
+  ): Promise {
     if (!this._immediate) {
       this._immediate = setImmediate(() => {
         this._immediate = null;
@@ -248,34 +236,41 @@ const AsyncStorage = {
       });
     }
 
-    return new Promise<?Array<Array<string>>>((resolve, reject) => {
-      this._getRequests.push({
-        keys,
-        callback,
-        // do we need this?
-        keyIndex: this._getKeys.length,
-        resolve,
-        reject,
-      });
-      // avoid fetching duplicates
-      keys.forEach(key => {
-        if (this._getKeys.indexOf(key) === -1) {
-          this._getKeys.push(key);
-        }
-      });
+    const getRequest = {
+      keys: keys,
+      callback: callback,
+      // do we need this?
+      keyIndex: this._getKeys.length,
+      resolve: null,
+      reject: null,
+    };
+
+    const promiseResult = new Promise((resolve, reject) => {
+      getRequest.resolve = resolve;
+      getRequest.reject = reject;
     });
+
+    this._getRequests.push(getRequest);
+    // avoid fetching duplicates
+    keys.forEach(key => {
+      if (this._getKeys.indexOf(key) === -1) {
+        this._getKeys.push(key);
+      }
+    });
+
+    return promiseResult;
   },
 
   /**
    * Use this as a batch operation for storing multiple key-value pairs. When
    * the operation completes you'll get a single callback with any errors.
    *
-   * See https://reactnative.dev/docs/asyncstorage.html#multiset
+   * See http://facebook.github.io/react-native/docs/asyncstorage.html#multiset
    */
   multiSet: function(
     keyValuePairs: Array<Array<string>>,
     callback?: ?(errors: ?Array<Error>) => void,
-  ): Promise<void> {
+  ): Promise {
     invariant(RCTAsyncStorage, 'RCTAsyncStorage not available');
     return new Promise((resolve, reject) => {
       RCTAsyncStorage.multiSet(keyValuePairs, function(errors) {
@@ -284,7 +279,7 @@ const AsyncStorage = {
         if (error) {
           reject(error);
         } else {
-          resolve();
+          resolve(null);
         }
       });
     });
@@ -293,12 +288,12 @@ const AsyncStorage = {
   /**
    * Call this to batch the deletion of all keys in the `keys` array.
    *
-   * See https://reactnative.dev/docs/asyncstorage.html#multiremove
+   * See http://facebook.github.io/react-native/docs/asyncstorage.html#multiremove
    */
   multiRemove: function(
     keys: Array<string>,
     callback?: ?(errors: ?Array<Error>) => void,
-  ): Promise<void> {
+  ): Promise {
     invariant(RCTAsyncStorage, 'RCTAsyncStorage not available');
     return new Promise((resolve, reject) => {
       RCTAsyncStorage.multiRemove(keys, function(errors) {
@@ -307,7 +302,7 @@ const AsyncStorage = {
         if (error) {
           reject(error);
         } else {
-          resolve();
+          resolve(null);
         }
       });
     });
@@ -319,12 +314,12 @@ const AsyncStorage = {
    *
    * **NOTE**: This is not supported by all native implementations.
    *
-   * See https://reactnative.dev/docs/asyncstorage.html#multimerge
+   * See http://facebook.github.io/react-native/docs/asyncstorage.html#multimerge
    */
   multiMerge: function(
     keyValuePairs: Array<Array<string>>,
     callback?: ?(errors: ?Array<Error>) => void,
-  ): Promise<void> {
+  ): Promise {
     invariant(RCTAsyncStorage, 'RCTAsyncStorage not available');
     return new Promise((resolve, reject) => {
       RCTAsyncStorage.multiMerge(keyValuePairs, function(errors) {
@@ -333,7 +328,7 @@ const AsyncStorage = {
         if (error) {
           reject(error);
         } else {
-          resolve();
+          resolve(null);
         }
       });
     });
@@ -341,38 +336,24 @@ const AsyncStorage = {
 };
 
 // Not all native implementations support merge.
-// TODO: Check whether above comment is correct. multiMerge is guaranteed to
-// exist in the module spec so we should be able to just remove this check.
-if (RCTAsyncStorage && !RCTAsyncStorage.multiMerge) {
-  // $FlowFixMe[unclear-type]
-  delete (AsyncStorage: any).mergeItem;
-  // $FlowFixMe[unclear-type]
-  delete (AsyncStorage: any).multiMerge;
+if (!RCTAsyncStorage.multiMerge) {
+  delete AsyncStorage.mergeItem;
+  delete AsyncStorage.multiMerge;
 }
 
-function convertErrors(
-  // NOTE: The native module spec only has the Array case, but the Android
-  // implementation passes a single object.
-  errs: ?(
-    | {message: string, key?: string}
-    | Array<{message: string, key?: string}>
-  ),
-) {
+function convertErrors(errs) {
   if (!errs) {
     return null;
   }
   return (Array.isArray(errs) ? errs : [errs]).map(e => convertError(e));
 }
 
-declare function convertError(void | null): null;
-declare function convertError({message: string, key?: string}): Error;
 function convertError(error) {
   if (!error) {
     return null;
   }
   const out = new Error(error.message);
-  // $FlowFixMe[unclear-type]
-  (out: any).key = error.key;
+  out.key = error.key; // flow doesn't like this :(
   return out;
 }
 

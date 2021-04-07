@@ -1,10 +1,9 @@
 /*
  * Copyright (c) Facebook, Inc. and its affiliates.
  *
- * This source code is licensed under the MIT license found in the
- * LICENSE file in the root directory of this source tree.
+ * This source code is licensed under the MIT license found in the LICENSE
+ * file in the root directory of this source tree.
  */
-
 #include "YGEnums.h"
 
 const char* YGAlignToString(const YGAlign value) {
@@ -179,8 +178,6 @@ const char* YGOverflowToString(const YGOverflow value) {
 
 const char* YGPositionTypeToString(const YGPositionType value) {
   switch (value) {
-    case YGPositionTypeStatic:
-      return "static";
     case YGPositionTypeRelative:
       return "relative";
     case YGPositionTypeAbsolute:

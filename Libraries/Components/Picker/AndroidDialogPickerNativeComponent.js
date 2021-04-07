@@ -8,25 +8,23 @@
  * @flow
  */
 
-import * as React from 'react';
+'use strict';
 
-import codegenNativeCommands from '../../Utilities/codegenNativeCommands';
+import {requireNativeComponent} from 'react-native';
 
 import type {
   DirectEventHandler,
   Int32,
   WithDefault,
 } from '../../Types/CodegenTypes';
-import * as NativeComponentRegistry from '../../NativeComponent/NativeComponentRegistry';
-import type {HostComponent} from '../../Renderer/shims/ReactNativeTypes';
 import type {TextStyleProp} from '../../StyleSheet/StyleSheet';
-import type {ColorValue} from '../../StyleSheet/StyleSheet';
-import type {ProcessedColorValue} from '../../StyleSheet/processColor';
+import type {ColorValue} from '../../StyleSheet/StyleSheetTypes';
+import type {NativeComponent} from '../../Renderer/shims/ReactNative';
 import type {ViewProps} from '../../Components/View/ViewPropTypes';
 
 type PickerItem = $ReadOnly<{|
   label: string,
-  color?: ?ProcessedColorValue,
+  color?: ?Int32,
 |}>;
 
 type PickerItemSelectEvent = $ReadOnly<{|
@@ -39,7 +37,6 @@ type NativeProps = $ReadOnly<{|
 
   // Props
   color?: ?ColorValue,
-  backgroundColor?: ?ColorValue,
   enabled?: WithDefault<boolean, true>,
   items: $ReadOnlyArray<PickerItem>,
   prompt?: WithDefault<string, ''>,
@@ -49,35 +46,8 @@ type NativeProps = $ReadOnly<{|
   onSelect?: DirectEventHandler<PickerItemSelectEvent>,
 |}>;
 
-type NativeType = HostComponent<NativeProps>;
+type ReactPicker = Class<NativeComponent<NativeProps>>;
 
-interface NativeCommands {
-  +setNativeSelectedPosition: (
-    viewRef: React.ElementRef<NativeType>,
-    index: number,
-  ) => void;
-}
-
-export const Commands: NativeCommands = codegenNativeCommands<NativeCommands>({
-  supportedCommands: ['setNativeSelectedPosition'],
-});
-
-const AndroidDialogPickerNativeComponent: HostComponent<NativeProps> = NativeComponentRegistry.get<NativeProps>(
+module.exports = ((requireNativeComponent(
   'AndroidDialogPicker',
-  () => ({
-    uiViewClassName: 'AndroidDialogPicker',
-    bubblingEventTypes: {},
-    directEventTypes: {},
-    validAttributes: {
-      color: {process: require('../../StyleSheet/processColor')},
-      backgroundColor: {process: require('../../StyleSheet/processColor')},
-      enabled: true,
-      items: true,
-      prompt: true,
-      selected: true,
-      onSelect: true,
-    },
-  }),
-);
-
-export default ((AndroidDialogPickerNativeComponent: any): NativeType);
+): any): ReactPicker);

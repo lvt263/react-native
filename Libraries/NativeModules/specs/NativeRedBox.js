@@ -8,11 +8,13 @@
  * @format
  */
 
+'use strict';
+
 import type {TurboModule} from '../../TurboModule/RCTExport';
 import * as TurboModuleRegistry from '../../TurboModule/TurboModuleRegistry';
 
 export interface Spec extends TurboModule {
-  +setExtraData: (extraData: Object, forIdentifier: string) => void;
+  +setExtraData: (extraData: Object, identifier: string) => void;
   +dismiss: () => void;
 }
 

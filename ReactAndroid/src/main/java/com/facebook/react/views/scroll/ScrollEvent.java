@@ -1,10 +1,9 @@
-/*
+/**
  * Copyright (c) Facebook, Inc. and its affiliates.
  *
- * This source code is licensed under the MIT license found in the
- * LICENSE file in the root directory of this source tree.
+ * <p>This source code is licensed under the MIT license found in the LICENSE file in the root
+ * directory of this source tree.
  */
-
 package com.facebook.react.views.scroll;
 
 import androidx.annotation.Nullable;
@@ -14,6 +13,7 @@ import com.facebook.react.bridge.Arguments;
 import com.facebook.react.bridge.WritableMap;
 import com.facebook.react.uimanager.PixelUtil;
 import com.facebook.react.uimanager.events.Event;
+import com.facebook.react.uimanager.events.RCTEventEmitter;
 
 /** A event dispatched from a ScrollView scrolling. */
 public class ScrollEvent extends Event<ScrollEvent> {
@@ -31,34 +31,7 @@ public class ScrollEvent extends Event<ScrollEvent> {
   private int mScrollViewHeight;
   private @Nullable ScrollEventType mScrollEventType;
 
-  @Deprecated
   public static ScrollEvent obtain(
-      int viewTag,
-      ScrollEventType scrollEventType,
-      int scrollX,
-      int scrollY,
-      float xVelocity,
-      float yVelocity,
-      int contentWidth,
-      int contentHeight,
-      int scrollViewWidth,
-      int scrollViewHeight) {
-    return obtain(
-        -1,
-        viewTag,
-        scrollEventType,
-        scrollX,
-        scrollY,
-        xVelocity,
-        yVelocity,
-        contentWidth,
-        contentHeight,
-        scrollViewWidth,
-        scrollViewHeight);
-  }
-
-  public static ScrollEvent obtain(
-      int surfaceId,
       int viewTag,
       ScrollEventType scrollEventType,
       int scrollX,
@@ -74,7 +47,6 @@ public class ScrollEvent extends Event<ScrollEvent> {
       event = new ScrollEvent();
     }
     event.init(
-        surfaceId,
         viewTag,
         scrollEventType,
         scrollX,
@@ -96,7 +68,6 @@ public class ScrollEvent extends Event<ScrollEvent> {
   private ScrollEvent() {}
 
   private void init(
-      int surfaceId,
       int viewTag,
       ScrollEventType scrollEventType,
       int scrollX,
@@ -107,7 +78,7 @@ public class ScrollEvent extends Event<ScrollEvent> {
       int contentHeight,
       int scrollViewWidth,
       int scrollViewHeight) {
-    super.init(surfaceId, viewTag);
+    super.init(viewTag);
     mScrollEventType = scrollEventType;
     mScrollX = scrollX;
     mScrollY = scrollY;
@@ -139,9 +110,12 @@ public class ScrollEvent extends Event<ScrollEvent> {
     return false;
   }
 
-  @Nullable
   @Override
-  protected WritableMap getEventData() {
+  public void dispatch(RCTEventEmitter rctEventEmitter) {
+    rctEventEmitter.receiveEvent(getViewTag(), getEventName(), serializeEventData());
+  }
+
+  private WritableMap serializeEventData() {
     WritableMap contentInset = Arguments.createMap();
     contentInset.putDouble("top", 0);
     contentInset.putDouble("bottom", 0);

@@ -51,11 +51,7 @@ class StyleSheetValidation {
     if (!__DEV__ || global.__RCTProfileIsProfiling) {
       return;
     }
-    if (!styles[name]) {
-      return;
-    }
-    const styleProps = Object.keys(styles[name]);
-    for (const prop of styleProps) {
+    for (const prop in styles[name]) {
       StyleSheetValidation.validateStyleProp(
         prop,
         styles[name],
@@ -64,9 +60,9 @@ class StyleSheetValidation {
     }
   }
 
-  /* $FlowFixMe[signature-verification-failure] (>=0.85.0 site=react_native_fb)
-   * This comment suppresses an error found when Flow v0.85 was deployed. To
-   * see the error, delete this comment and run Flow. */
+  /* $FlowFixMe(>=0.85.0 site=react_native_fb) This comment suppresses an error
+   * found when Flow v0.85 was deployed. To see the error, delete this comment
+   * and run Flow. */
   static addValidStylePropTypes(stylePropTypes) {
     if (!__DEV__ || global.__RCTProfileIsProfiling) {
       return;

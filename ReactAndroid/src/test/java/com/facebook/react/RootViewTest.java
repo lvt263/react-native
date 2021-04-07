@@ -1,10 +1,9 @@
-/*
+/**
  * Copyright (c) Facebook, Inc. and its affiliates.
  *
- * This source code is licensed under the MIT license found in the
- * LICENSE file in the root directory of this source tree.
+ * <p>This source code is licensed under the MIT license found in the LICENSE file in the root
+ * directory of this source tree.
  */
-
 package com.facebook.react;
 
 import static org.fest.assertions.api.Assertions.assertThat;
@@ -111,11 +110,10 @@ public class RootViewTest {
 
     ReactRootView rootView = new ReactRootView(mReactContext);
     rootView.setId(rootViewId);
-    rootView.setRootViewTag(rootViewId);
     rootView.startReactApplication(instanceManager, "");
     rootView.simulateAttachForTesting();
 
-    long ts = SystemClock.currentTimeMillis();
+    long ts = SystemClock.uptimeMillis();
 
     // Test ACTION_DOWN event
     rootView.onTouchEvent(MotionEvent.obtain(100, ts, MotionEvent.ACTION_DOWN, 0, 0, 0));
@@ -150,9 +148,7 @@ public class RootViewTest {
                 "timestamp",
                 (double) ts,
                 "identifier",
-                0.,
-                "targetSurface",
-                rootViewId));
+                0.));
 
     // Test ACTION_UP event
     reset(eventEmitterModuleMock, eventDispatcher);
@@ -188,9 +184,7 @@ public class RootViewTest {
                 "timestamp",
                 (double) ts,
                 "identifier",
-                0.,
-                "targetSurface",
-                rootViewId));
+                0.));
 
     // Test other action
     reset(eventDispatcher);

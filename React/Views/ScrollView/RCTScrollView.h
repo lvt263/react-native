@@ -1,4 +1,4 @@
-/*
+/**
  * Copyright (c) Facebook, Inc. and its affiliates.
  *
  * This source code is licensed under the MIT license found in the
@@ -8,8 +8,7 @@
 #import <UIKit/UIScrollView.h>
 
 #import <React/RCTAutoInsetsProtocol.h>
-#import <React/RCTDefines.h>
-#import <React/RCTEventDispatcherProtocol.h>
+#import <React/RCTEventDispatcher.h>
 #import <React/RCTScrollableProtocol.h>
 #import <React/RCTView.h>
 
@@ -17,7 +16,7 @@
 
 @interface RCTScrollView : RCTView <UIScrollViewDelegate, RCTScrollableProtocol, RCTAutoInsetsProtocol>
 
-- (instancetype)initWithEventDispatcher:(id<RCTEventDispatcherProtocol>)eventDispatcher NS_DESIGNATED_INITIALIZER;
+- (instancetype)initWithEventDispatcher:(RCTEventDispatcher *)eventDispatcher NS_DESIGNATED_INITIALIZER;
 
 /**
  * The `RCTScrollView` may have at most one single subview. This will ensure
@@ -27,6 +26,12 @@
  * layout system.
  */
 @property (nonatomic, readonly) UIView *contentView;
+
+/**
+ * If the `contentSize` is not specified (or is specified as {0, 0}, then the
+ * `contentSize` will automatically be determined by the size of the subview.
+ */
+@property (nonatomic, assign) CGSize contentSize;
 
 /**
  * The underlying scrollView (TODO: can we remove this?)
@@ -46,7 +51,6 @@
 @property (nonatomic, assign) BOOL snapToStart;
 @property (nonatomic, assign) BOOL snapToEnd;
 @property (nonatomic, copy) NSString *snapToAlignment;
-@property (nonatomic, assign) BOOL inverted;
 
 // NOTE: currently these event props are only declared so we can export the
 // event names to JS - we don't call the blocks directly because scroll events
@@ -62,8 +66,15 @@
 
 @interface RCTScrollView (Internal)
 
-- (void)updateContentSizeIfNeeded;
+- (void)updateContentOffsetIfNeeded;
 
 @end
 
-RCT_EXTERN void RCTSendFakeScrollEvent(id<RCTEventDispatcherProtocol> eventDispatcher, NSNumber *reactTag);
+@interface RCTEventDispatcher (RCTScrollView)
+
+/**
+ * Send a fake scroll event.
+ */
+- (void)sendFakeScrollEvent:(NSNumber *)reactTag;
+
+@end

@@ -1,4 +1,4 @@
-/*
+/**
  * Copyright (c) Facebook, Inc. and its affiliates.
  *
  * This source code is licensed under the MIT license found in the
@@ -8,11 +8,10 @@
 #import "RCTTouchHandler.h"
 
 #import <UIKit/UIGestureRecognizerSubclass.h>
-#import <UIKit/UIKit.h>
 
 #import "RCTAssert.h"
 #import "RCTBridge.h"
-#import "RCTEventDispatcherProtocol.h"
+#import "RCTEventDispatcher.h"
 #import "RCTLog.h"
 #import "RCTSurfaceView.h"
 #import "RCTTouchEvent.h"
@@ -25,8 +24,9 @@
 
 // TODO: this class behaves a lot like a module, and could be implemented as a
 // module if we were to assume that modules and RootViews had a 1:1 relationship
-@implementation RCTTouchHandler {
-  __weak id<RCTEventDispatcherProtocol> _eventDispatcher;
+@implementation RCTTouchHandler
+{
+  __weak RCTEventDispatcher *_eventDispatcher;
 
   /**
    * Arrays managed in parallel tracking native touch object along with the
@@ -40,10 +40,6 @@
 
   __weak UIView *_cachedRootView;
 
-  // See Touch.h and usage. This gives us a time-basis for a monotonic
-  // clock that acts like a timestamp of milliseconds elapsed since UNIX epoch.
-  NSTimeInterval _unixEpochBasisTime;
-
   uint16_t _coalescingKey;
 }
 
@@ -52,14 +48,11 @@
   RCTAssertParam(bridge);
 
   if ((self = [super initWithTarget:nil action:NULL])) {
-    _eventDispatcher = bridge.eventDispatcher;
+    _eventDispatcher = [bridge moduleForClass:[RCTEventDispatcher class]];
 
     _nativeTouches = [NSMutableOrderedSet new];
     _reactTouches = [NSMutableArray new];
     _touchViews = [NSMutableArray new];
-
-    // Get a UNIX epoch basis time:
-    _unixEpochBasisTime = [[NSDate date] timeIntervalSince1970] - [NSProcessInfo processInfo].systemUptime;
 
     // `cancelsTouchesInView` and `delaysTouches*` are needed in order to be used as a top level
     // event delegated recognizer. Otherwise, lower-level components not built
@@ -74,7 +67,7 @@
   return self;
 }
 
-RCT_NOT_IMPLEMENTED(-(instancetype)initWithTarget : (id)target action : (SEL)action)
+RCT_NOT_IMPLEMENTED(- (instancetype)initWithTarget:(id)target action:(SEL)action)
 
 - (void)attachToView:(UIView *)view
 {
@@ -96,7 +89,9 @@ RCT_NOT_IMPLEMENTED(-(instancetype)initWithTarget : (id)target action : (SEL)act
 - (void)_recordNewTouches:(NSSet<UITouch *> *)touches
 {
   for (UITouch *touch in touches) {
-    RCTAssert(![_nativeTouches containsObject:touch], @"Touch is already recorded. This is a critical bug.");
+
+    RCTAssert(![_nativeTouches containsObject:touch],
+              @"Touch is already recorded. This is a critical bug.");
 
     // Find closest React-managed touchable view
     UIView *targetView = touch.view;
@@ -119,7 +114,7 @@ RCT_NOT_IMPLEMENTED(-(instancetype)initWithTarget : (id)target action : (SEL)act
       NSInteger usedID = [reactTouch[@"identifier"] integerValue];
       if (usedID == touchID) {
         // ID has already been used, try next value
-        touchID++;
+        touchID ++;
       } else if (usedID > touchID) {
         // If usedID > touchID, touchID must be unique, so we can stop looking
         break;
@@ -167,7 +162,7 @@ RCT_NOT_IMPLEMENTED(-(instancetype)initWithTarget : (id)target action : (SEL)act
   reactTouch[@"pageY"] = @(RCTSanitizeNaNValue(rootViewLocation.y, @"touchEvent.pageY"));
   reactTouch[@"locationX"] = @(RCTSanitizeNaNValue(touchViewLocation.x, @"touchEvent.locationX"));
   reactTouch[@"locationY"] = @(RCTSanitizeNaNValue(touchViewLocation.y, @"touchEvent.locationY"));
-  reactTouch[@"timestamp"] = @((_unixEpochBasisTime + nativeTouch.timestamp) * 1000); // in ms, for JS
+  reactTouch[@"timestamp"] =  @(nativeTouch.timestamp * 1000); // in ms, for JS
 
   // TODO: force for a 'normal' touch is usually 1.0;
   // should we expose a `normalTouchForce` constant somewhere (which would
@@ -188,7 +183,8 @@ RCT_NOT_IMPLEMENTED(-(instancetype)initWithTarget : (id)target action : (SEL)act
  * (start/end/move/cancel) and the indices that represent "changed" `Touch`es
  * from that array.
  */
-- (void)_updateAndDispatchTouches:(NSSet<UITouch *> *)touches eventName:(NSString *)eventName
+- (void)_updateAndDispatchTouches:(NSSet<UITouch *> *)touches
+                        eventName:(NSString *)eventName
 {
   // Update touches
   NSMutableArray<NSNumber *> *changedIndexes = [NSMutableArray new];
@@ -208,7 +204,8 @@ RCT_NOT_IMPLEMENTED(-(instancetype)initWithTarget : (id)target action : (SEL)act
 
   // Deep copy the touches because they will be accessed from another thread
   // TODO: would it be safer to do this in the bridge or executor, rather than trusting caller?
-  NSMutableArray<NSDictionary *> *reactTouches = [[NSMutableArray alloc] initWithCapacity:_reactTouches.count];
+  NSMutableArray<NSDictionary *> *reactTouches =
+  [[NSMutableArray alloc] initWithCapacity:_reactTouches.count];
   for (NSDictionary *touch in _reactTouches) {
     [reactTouches addObject:[touch copy]];
   }
@@ -261,7 +258,9 @@ RCT_NOT_IMPLEMENTED(-(instancetype)initWithTarget : (id)target action : (SEL)act
 static BOOL RCTAllTouchesAreCancelledOrEnded(NSSet<UITouch *> *touches)
 {
   for (UITouch *touch in touches) {
-    if (touch.phase == UITouchPhaseBegan || touch.phase == UITouchPhaseMoved || touch.phase == UITouchPhaseStationary) {
+    if (touch.phase == UITouchPhaseBegan ||
+        touch.phase == UITouchPhaseMoved ||
+        touch.phase == UITouchPhaseStationary) {
       return NO;
     }
   }
@@ -271,7 +270,8 @@ static BOOL RCTAllTouchesAreCancelledOrEnded(NSSet<UITouch *> *touches)
 static BOOL RCTAnyTouchesChanged(NSSet<UITouch *> *touches)
 {
   for (UITouch *touch in touches) {
-    if (touch.phase == UITouchPhaseBegan || touch.phase == UITouchPhaseMoved) {
+    if (touch.phase == UITouchPhaseBegan ||
+        touch.phase == UITouchPhaseMoved) {
       return YES;
     }
   }
@@ -372,8 +372,7 @@ static BOOL RCTAnyTouchesChanged(NSSet<UITouch *> *touches)
 
 #pragma mark - UIGestureRecognizerDelegate
 
-- (BOOL)gestureRecognizer:(__unused UIGestureRecognizer *)gestureRecognizer
-    shouldRequireFailureOfGestureRecognizer:(UIGestureRecognizer *)otherGestureRecognizer
+- (BOOL)gestureRecognizer:(__unused UIGestureRecognizer *)gestureRecognizer shouldRequireFailureOfGestureRecognizer:(UIGestureRecognizer *)otherGestureRecognizer
 {
   // Same condition for `failure of` as for `be prevented by`.
   return [self canBePreventedByGestureRecognizer:otherGestureRecognizer];

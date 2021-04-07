@@ -8,6 +8,8 @@
  * @format
  */
 
+'use strict';
+
 import type {TurboModule} from '../../TurboModule/RCTExport';
 import * as TurboModuleRegistry from '../../TurboModule/TurboModuleRegistry';
 
@@ -36,7 +38,7 @@ export interface Spec extends TurboModule {
     onSuccess: (isScreenReaderEnabled: boolean) => void,
     onError: (error: Object) => void,
   ) => void;
-  +setAccessibilityContentSizeMultipliers: (JSMultipliers: {|
+  +setAccessibilityContentSizeMultipliers: (JSMultiipliers: {|
     +extraSmall?: ?number,
     +small?: ?number,
     +medium?: ?number,

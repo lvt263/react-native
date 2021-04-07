@@ -1,9 +1,7 @@
-/*
- * Copyright (c) Facebook, Inc. and its affiliates.
- *
- * This source code is licensed under the MIT license found in the
- * LICENSE file in the root directory of this source tree.
- */
+// Copyright (c) Facebook, Inc. and its affiliates.
+
+// This source code is licensed under the MIT license found in the
+// LICENSE file in the root directory of this source tree.
 
 package com.facebook.react;
 
@@ -20,9 +18,9 @@ import com.facebook.react.bridge.Callback;
 import com.facebook.react.modules.core.PermissionListener;
 
 /**
- * Delegate class for {@link ReactActivity}. You can subclass this to provide custom implementations
- * for e.g. {@link #getReactNativeHost()}, if your Application class doesn't implement {@link
- * ReactApplication}.
+ * Delegate class for {@link ReactActivity} and {@link ReactFragmentActivity}. You can subclass this
+ * to provide custom implementations for e.g. {@link #getReactNativeHost()}, if your Application
+ * class doesn't implement {@link ReactApplication}.
  */
 public class ReactActivityDelegate {
 

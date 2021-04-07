@@ -1,28 +1,22 @@
-/*
+/**
  * Copyright (c) Facebook, Inc. and its affiliates.
  *
- * This source code is licensed under the MIT license found in the
- * LICENSE file in the root directory of this source tree.
+ * <p>This source code is licensed under the MIT license found in the LICENSE file in the root
+ * directory of this source tree.
  */
-
 package com.facebook.react.views.scroll;
 
 import android.graphics.Color;
 import android.util.DisplayMetrics;
-import android.view.View;
 import androidx.annotation.Nullable;
 import androidx.core.view.ViewCompat;
 import com.facebook.react.bridge.ReadableArray;
-import com.facebook.react.bridge.ReadableMap;
-import com.facebook.react.bridge.RetryableMountingLayerException;
 import com.facebook.react.common.MapBuilder;
 import com.facebook.react.module.annotations.ReactModule;
 import com.facebook.react.uimanager.DisplayMetricsHolder;
 import com.facebook.react.uimanager.PixelUtil;
 import com.facebook.react.uimanager.ReactClippingViewGroupHelper;
-import com.facebook.react.uimanager.ReactStylesDiffMap;
 import com.facebook.react.uimanager.Spacing;
-import com.facebook.react.uimanager.StateWrapper;
 import com.facebook.react.uimanager.ThemedReactContext;
 import com.facebook.react.uimanager.ViewGroupManager;
 import com.facebook.react.uimanager.ViewProps;
@@ -86,11 +80,6 @@ public class ReactScrollViewManager extends ViewGroupManager<ReactScrollView>
   @ReactProp(name = "decelerationRate")
   public void setDecelerationRate(ReactScrollView view, float decelerationRate) {
     view.setDecelerationRate(decelerationRate);
-  }
-
-  @ReactProp(name = "disableIntervalMomentum")
-  public void setDisableIntervalMomentum(ReactScrollView view, boolean disbaleIntervalMomentum) {
-    view.setDisableIntervalMomentum(disbaleIntervalMomentum);
   }
 
   @ReactProp(name = "snapToInterval")
@@ -203,8 +192,13 @@ public class ReactScrollViewManager extends ViewGroupManager<ReactScrollView>
   @Override
   public void scrollTo(
       ReactScrollView scrollView, ReactScrollViewCommandHelper.ScrollToCommandData data) {
-    if (data.mAnimated) {
-      scrollView.reactSmoothScrollTo(data.mDestX, data.mDestY);
+    if (data.mAnimated && data.mDuration != 0) {
+      if (data.mDuration > 0) {
+        // data.mDuration set to -1 to fallbacks to default platform behavior
+        scrollView.animateScroll(data.mDestX, data.mDestY, data.mDuration);
+      } else {
+        scrollView.smoothScrollTo(data.mDestX, data.mDestY);
+      }
     } else {
       scrollView.scrollTo(data.mDestX, data.mDestY);
     }
@@ -275,15 +269,15 @@ public class ReactScrollViewManager extends ViewGroupManager<ReactScrollView>
   @Override
   public void scrollToEnd(
       ReactScrollView scrollView, ReactScrollViewCommandHelper.ScrollToEndCommandData data) {
-    View child = scrollView.getChildAt(0);
-    if (child == null) {
-      throw new RetryableMountingLayerException("scrollToEnd called on ScrollView without child");
-    }
-
     // ScrollView always has one child - the scrollable area
-    int bottom = child.getHeight() + scrollView.getPaddingBottom();
-    if (data.mAnimated) {
-      scrollView.reactSmoothScrollTo(scrollView.getScrollX(), bottom);
+    int bottom = scrollView.getChildAt(0).getHeight() + scrollView.getPaddingBottom();
+    if (data.mAnimated && data.mDuration != 0) {
+      if (data.mDuration > 0) {
+        // data.mDuration set to -1 to fallbacks to default platform behavior
+        scrollView.animateScroll(data.mDestX, data.mDestY, data.mDuration);
+      } else {
+        scrollView.smoothScrollTo(data.mDestX, data.mDestY);
+      }
     } else {
       scrollView.scrollTo(scrollView.getScrollX(), bottom);
     }
@@ -292,35 +286,6 @@ public class ReactScrollViewManager extends ViewGroupManager<ReactScrollView>
   @ReactProp(name = "persistentScrollbar")
   public void setPersistentScrollbar(ReactScrollView view, boolean value) {
     view.setScrollbarFadingEnabled(!value);
-  }
-
-  @ReactProp(name = "fadingEdgeLength")
-  public void setFadingEdgeLength(ReactScrollView view, int value) {
-    if (value > 0) {
-      view.setVerticalFadingEdgeEnabled(true);
-      view.setFadingEdgeLength(value);
-    } else {
-      view.setVerticalFadingEdgeEnabled(false);
-      view.setFadingEdgeLength(0);
-    }
-  }
-
-  @ReactProp(name = "contentOffset", customType = "Point")
-  public void setContentOffset(ReactScrollView view, ReadableMap value) {
-    if (value != null) {
-      double x = value.hasKey("x") ? value.getDouble("x") : 0;
-      double y = value.hasKey("y") ? value.getDouble("y") : 0;
-      view.scrollTo((int) PixelUtil.toPixelFromDIP(x), (int) PixelUtil.toPixelFromDIP(y));
-    } else {
-      view.scrollTo(0, 0);
-    }
-  }
-
-  @Override
-  public Object updateState(
-      ReactScrollView view, ReactStylesDiffMap props, @Nullable StateWrapper stateWrapper) {
-    view.getFabricViewStateManager().setStateWrapper(stateWrapper);
-    return null;
   }
 
   @Override

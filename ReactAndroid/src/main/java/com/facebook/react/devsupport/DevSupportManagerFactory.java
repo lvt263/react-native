@@ -1,10 +1,9 @@
-/*
+/**
  * Copyright (c) Facebook, Inc. and its affiliates.
  *
- * This source code is licensed under the MIT license found in the
- * LICENSE file in the root directory of this source tree.
+ * <p>This source code is licensed under the MIT license found in the LICENSE file in the root
+ * directory of this source tree.
  */
-
 package com.facebook.react.devsupport;
 
 import android.content.Context;
@@ -28,14 +27,14 @@ public class DevSupportManagerFactory {
 
   public static DevSupportManager create(
       Context applicationContext,
-      ReactInstanceDevHelper reactInstanceDevHelper,
+      ReactInstanceManagerDevHelper reactInstanceManagerHelper,
       @Nullable String packagerPathForJSBundleName,
       boolean enableOnCreate,
       int minNumShakes) {
 
     return create(
         applicationContext,
-        reactInstanceDevHelper,
+        reactInstanceManagerHelper,
         packagerPathForJSBundleName,
         enableOnCreate,
         null,
@@ -46,7 +45,7 @@ public class DevSupportManagerFactory {
 
   public static DevSupportManager create(
       Context applicationContext,
-      ReactInstanceDevHelper reactInstanceManagerHelper,
+      ReactInstanceManagerDevHelper reactInstanceManagerHelper,
       @Nullable String packagerPathForJSBundleName,
       boolean enableOnCreate,
       @Nullable RedBoxHandler redBoxHandler,
@@ -69,7 +68,7 @@ public class DevSupportManagerFactory {
       Constructor constructor =
           devSupportManagerClass.getConstructor(
               Context.class,
-              ReactInstanceDevHelper.class,
+              ReactInstanceManagerDevHelper.class,
               String.class,
               boolean.class,
               RedBoxHandler.class,

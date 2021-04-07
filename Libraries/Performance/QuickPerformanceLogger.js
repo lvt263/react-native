@@ -65,7 +65,9 @@ const QuickPerformanceLogger = {
     markerId: number,
     instanceKey?: number = DUMMY_INSTANCE_KEY,
   ): void {
-    this.markerDrop(markerId, instanceKey);
+    if (global.nativeQPLMarkerCancel) {
+      global.nativeQPLMarkerCancel(markerId, instanceKey);
+    }
   },
 
   markerPoint(
@@ -76,15 +78,6 @@ const QuickPerformanceLogger = {
   ): void {
     if (global.nativeQPLMarkerPoint) {
       global.nativeQPLMarkerPoint(markerId, name, instanceKey, timestamp);
-    }
-  },
-
-  markerDrop(
-    markerId: number,
-    instanceKey?: number = DUMMY_INSTANCE_KEY,
-  ): void {
-    if (global.nativeQPLMarkerDrop) {
-      global.nativeQPLMarkerDrop(markerId, instanceKey);
     }
   },
 

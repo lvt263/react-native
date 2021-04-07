@@ -7,7 +7,6 @@
  * @flow
  * @format
  */
-
 'use strict';
 
 const binaryToBase64 = require('../Utilities/binaryToBase64');
@@ -19,7 +18,7 @@ export type RequestBody =
   | string
   | Blob
   | FormData
-  | {uri: string, ...}
+  | {uri: string}
   | ArrayBuffer
   | $ArrayBufferView;
 
@@ -34,8 +33,7 @@ function convertRequestBody(body: RequestBody): Object {
     return {formData: body.getParts()};
   }
   if (body instanceof ArrayBuffer || ArrayBuffer.isView(body)) {
-    /* $FlowFixMe[incompatible-call] : no way to assert that 'body' is indeed
-     * an ArrayBufferView */
+    // $FlowFixMe: no way to assert that 'body' is indeed an ArrayBufferView
     return {base64: binaryToBase64(body)};
   }
   return body;

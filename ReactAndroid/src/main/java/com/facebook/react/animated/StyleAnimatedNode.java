@@ -1,10 +1,9 @@
-/*
+/**
  * Copyright (c) Facebook, Inc. and its affiliates.
  *
- * This source code is licensed under the MIT license found in the
- * LICENSE file in the root directory of this source tree.
+ * <p>This source code is licensed under the MIT license found in the LICENSE file in the root
+ * directory of this source tree.
  */
-
 package com.facebook.react.animated;
 
 import androidx.annotation.Nullable;
@@ -48,12 +47,5 @@ import java.util.Map;
             "Unsupported type of node used in property node " + node.getClass());
       }
     }
-  }
-
-  public String prettyPrint() {
-    return "StyleAnimatedNode["
-        + mTag
-        + "] mPropMapping: "
-        + (mPropMapping != null ? mPropMapping.toString() : "null");
   }
 }

@@ -5,65 +5,35 @@
  * LICENSE file in the root directory of this source tree.
  *
  * @format
- * @flow strict
+ * @flow
  */
 
 'use strict';
 
 import type {StackFrame} from '../NativeExceptionsManager';
-import type {HermesParsedStack} from './parseHermesStack';
 
-const parseHermesStack = require('./parseHermesStack');
+export type ExtendedError = Error & {
+  framesToPop?: number,
+  jsEngine?: string,
+  preventSymbolication?: boolean,
+  componentStack?: string,
+};
 
-// $FlowFixMe[incompatible-exact]
-export type ExtendedError = Error &
-  interface {
-    jsEngine?: string,
-    preventSymbolication?: boolean,
-    componentStack?: string,
-    forceRedbox?: boolean,
-    isComponentError?: boolean,
-  };
-
-function convertHermesStack(stack: HermesParsedStack): Array<StackFrame> {
-  const frames = [];
-  for (const entry of stack.entries) {
-    if (entry.type !== 'FRAME') {
-      continue;
-    }
-    const {location, functionName} = entry;
-    if (location.type === 'NATIVE') {
-      continue;
-    }
-    frames.push({
-      methodName: functionName,
-      file: location.sourceUrl,
-      lineNumber: location.line1Based,
-      column:
-        location.type === 'SOURCE'
-          ? location.column1Based - 1
-          : location.virtualOffset0Based,
-    });
-  }
-  return frames;
-}
-
-function parseErrorStack(errorStack?: string): Array<StackFrame> {
-  if (errorStack == null) {
+function parseErrorStack(e: ExtendedError): Array<StackFrame> {
+  if (!e || !e.stack) {
     return [];
   }
 
   const stacktraceParser = require('stacktrace-parser');
-  const parsedStack = Array.isArray(errorStack)
-    ? errorStack
-    : global.HermesInternal
-    ? convertHermesStack(parseHermesStack(errorStack))
-    : stacktraceParser.parse(errorStack).map(frame => ({
-        ...frame,
-        column: frame.column != null ? frame.column - 1 : null,
-      }));
+  const stack = Array.isArray(e.stack)
+    ? e.stack
+    : stacktraceParser.parse(e.stack);
 
-  return parsedStack;
+  let framesToPop = typeof e.framesToPop === 'number' ? e.framesToPop : 0;
+  while (framesToPop--) {
+    stack.shift();
+  }
+  return stack;
 }
 
 module.exports = parseErrorStack;

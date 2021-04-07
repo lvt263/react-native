@@ -4,11 +4,12 @@
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  *
- * @flow strict
+ * @flow
  * @format
  */
+'use strict';
+const createPerformanceLogger = require('./createPerformanceLogger');
 
-import createPerformanceLogger from './createPerformanceLogger';
 import type {IPerformanceLogger} from './createPerformanceLogger';
 
 /**

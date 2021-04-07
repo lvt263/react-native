@@ -1,4 +1,4 @@
-/*
+/**
  * Copyright (c) Facebook, Inc. and its affiliates.
  *
  * This source code is licensed under the MIT license found in the
@@ -10,10 +10,13 @@
 #import "RCTLog.h"
 #import "RCTModalHostView.h"
 
-@implementation RCTModalHostViewController {
+@implementation RCTModalHostViewController
+{
   CGRect _lastViewFrame;
+#if !TARGET_OS_TV
   UIStatusBarStyle _preferredStatusBarStyle;
   BOOL _preferredStatusBarHidden;
+#endif
 }
 
 - (instancetype)init
@@ -22,15 +25,10 @@
     return nil;
   }
 
-#if defined(__IPHONE_OS_VERSION_MAX_ALLOWED) && defined(__IPHONE_13_0) && \
-    __IPHONE_OS_VERSION_MAX_ALLOWED >= __IPHONE_13_0
-  if (@available(iOS 13.0, *)) {
-    self.modalInPresentation = YES;
-  }
-#endif
-
+#if !TARGET_OS_TV
   _preferredStatusBarStyle = [RCTSharedApplication() statusBarStyle];
   _preferredStatusBarHidden = [RCTSharedApplication() isStatusBarHidden];
+#endif
 
   return self;
 }
@@ -45,6 +43,7 @@
   }
 }
 
+#if !TARGET_OS_TV
 - (UIStatusBarStyle)preferredStatusBarStyle
 {
   return _preferredStatusBarStyle;
@@ -58,20 +57,20 @@
 #if RCT_DEV
 - (UIInterfaceOrientationMask)supportedInterfaceOrientations
 {
-  UIInterfaceOrientationMask appSupportedOrientationsMask =
-      [RCTSharedApplication() supportedInterfaceOrientationsForWindow:[RCTSharedApplication() keyWindow]];
+  UIInterfaceOrientationMask appSupportedOrientationsMask = [RCTSharedApplication() supportedInterfaceOrientationsForWindow:[RCTSharedApplication() keyWindow]];
   if (!(_supportedInterfaceOrientations & appSupportedOrientationsMask)) {
-    RCTLogError(
-        @"Modal was presented with 0x%x orientations mask but the application only supports 0x%x."
-        @"Add more interface orientations to your app's Info.plist to fix this."
-        @"NOTE: This will crash in non-dev mode.",
-        (unsigned)_supportedInterfaceOrientations,
-        (unsigned)appSupportedOrientationsMask);
+    RCTLogError(@"Modal was presented with 0x%x orientations mask but the application only supports 0x%x."
+                @"Add more interface orientations to your app's Info.plist to fix this."
+                @"NOTE: This will crash in non-dev mode.",
+                (unsigned)_supportedInterfaceOrientations,
+                (unsigned)appSupportedOrientationsMask);
     return UIInterfaceOrientationMaskAll;
   }
 
   return _supportedInterfaceOrientations;
 }
 #endif // RCT_DEV
+#endif // !TARGET_OS_TV
+
 
 @end

@@ -1,4 +1,4 @@
-/*
+/**
  * Copyright (c) Facebook, Inc. and its affiliates.
  *
  * This source code is licensed under the MIT license found in the
@@ -11,26 +11,21 @@
 
 extern NSString *const RCTJavaScriptLoaderErrorDomain;
 
-extern const UInt32 RCT_BYTECODE_ALIGNMENT;
+NS_ENUM(NSInteger) {
+  RCTJavaScriptLoaderErrorNoScriptURL = 1,
+  RCTJavaScriptLoaderErrorFailedOpeningFile = 2,
+  RCTJavaScriptLoaderErrorFailedReadingFile = 3,
+  RCTJavaScriptLoaderErrorFailedStatingFile = 3,
+  RCTJavaScriptLoaderErrorURLLoadFailed = 3,
+  RCTJavaScriptLoaderErrorBCVersion = 4,
+  RCTJavaScriptLoaderErrorBCNotSupported = 4,
 
-UInt32 RCTReadUInt32LE(NSData *script, UInt32 offset);
-bool RCTIsBytecodeBundle(NSData *script);
-
-NS_ENUM(NSInteger){
-    RCTJavaScriptLoaderErrorNoScriptURL = 1,
-    RCTJavaScriptLoaderErrorFailedOpeningFile = 2,
-    RCTJavaScriptLoaderErrorFailedReadingFile = 3,
-    RCTJavaScriptLoaderErrorFailedStatingFile = 3,
-    RCTJavaScriptLoaderErrorURLLoadFailed = 3,
-    RCTJavaScriptLoaderErrorBCVersion = 4,
-    RCTJavaScriptLoaderErrorBCNotSupported = 4,
-
-    RCTJavaScriptLoaderErrorCannotBeLoadedSynchronously = 1000,
+  RCTJavaScriptLoaderErrorCannotBeLoadedSynchronously = 1000,
 };
 
-NS_ENUM(NSInteger){
-    RCTSourceFilesChangedCountNotBuiltByBundler = -2,
-    RCTSourceFilesChangedCountRebuiltFromScratch = -1,
+NS_ENUM(NSInteger) {
+  RCTSourceFilesChangedCountNotBuiltByBundler = -2,
+  RCTSourceFilesChangedCountRebuiltFromScratch = -1,
 };
 
 @interface RCTLoadingProgress : NSObject
@@ -79,9 +74,7 @@ typedef void (^RCTSourceLoadBlock)(NSError *error, RCTSource *source);
 
 @interface RCTJavaScriptLoader : NSObject
 
-+ (void)loadBundleAtURL:(NSURL *)scriptURL
-             onProgress:(RCTSourceLoadProgressBlock)onProgress
-             onComplete:(RCTSourceLoadBlock)onComplete;
++ (void)loadBundleAtURL:(NSURL *)scriptURL onProgress:(RCTSourceLoadProgressBlock)onProgress onComplete:(RCTSourceLoadBlock)onComplete;
 
 /**
  * @experimental
@@ -92,6 +85,7 @@ typedef void (^RCTSourceLoadBlock)(NSError *error, RCTSource *source);
  * RCTJavaScriptLoaderErrorDomain and the code RCTJavaScriptLoaderErrorCannotBeLoadedSynchronously.
  */
 + (NSData *)attemptSynchronousLoadOfBundleAtURL:(NSURL *)scriptURL
+                               runtimeBCVersion:(int32_t)runtimeBCVersion
                                    sourceLength:(int64_t *)sourceLength
                                           error:(NSError **)error;
 

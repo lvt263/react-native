@@ -8,6 +8,8 @@
  * @format
  */
 
+'use strict';
+
 import type {TurboModule} from '../TurboModule/RCTExport';
 import * as TurboModuleRegistry from '../TurboModule/TurboModuleRegistry';
 
@@ -20,7 +22,7 @@ export interface Spec extends TurboModule {
     requestId: number,
     headers: Array<Header>,
     data: Object,
-    responseType: string,
+    responseType: Object, // TODO: Use stricter type.
     useIncrementalUpdates: boolean,
     timeout: number,
     withCredentials: boolean,

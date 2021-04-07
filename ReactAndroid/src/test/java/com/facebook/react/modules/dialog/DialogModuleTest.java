@@ -1,10 +1,9 @@
-/*
+/**
  * Copyright (c) Facebook, Inc. and its affiliates.
  *
- * This source code is licensed under the MIT license found in the
- * LICENSE file in the root directory of this source tree.
+ * <p>This source code is licensed under the MIT license found in the LICENSE file in the root
+ * directory of this source tree.
  */
-
 package com.facebook.react.modules.dialog;
 
 import static org.junit.Assert.assertEquals;
@@ -25,7 +24,7 @@ import org.powermock.api.mockito.PowerMockito;
 import org.powermock.core.classloader.annotations.PowerMockIgnore;
 import org.robolectric.Robolectric;
 import org.robolectric.RobolectricTestRunner;
-import org.robolectric.android.controller.ActivityController;
+import org.robolectric.util.ActivityController;
 
 @RunWith(RobolectricTestRunner.class)
 @PowerMockIgnore({"org.mockito.*", "org.robolectric.*", "androidx.*", "android.*"})
@@ -60,7 +59,7 @@ public class DialogModuleTest {
     mActivity = mActivityController.create().start().resume().get();
 
     final ReactApplicationContext context = PowerMockito.mock(ReactApplicationContext.class);
-    PowerMockito.when(context.hasActiveReactInstance()).thenReturn(true);
+    PowerMockito.when(context.hasActiveCatalystInstance()).thenReturn(true);
     PowerMockito.when(context, "getCurrentActivity").thenReturn(mActivity);
 
     mDialogModule = new DialogModule(context);

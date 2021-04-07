@@ -31,7 +31,6 @@ type Props = $ReadOnly<{|
   source?: ?{
     fileName?: string,
     lineNumber?: number,
-    ...
   },
   frame?: ?Object,
   selection?: ?number,
@@ -70,7 +69,7 @@ class ElementProperties extends React.Component<Props> {
                 <TouchableHighlight
                   key={'item-' + i}
                   style={[styles.breadItem, i === selection && styles.selected]}
-                  // $FlowFixMe[not-a-function] found when converting React.createClass to ES6
+                  // $FlowFixMe found when converting React.createClass to ES6
                   onPress={() => this.props.setSelection(i)}>
                   <Text style={styles.breadItemText}>{hierarchyItem.name}</Text>
                 </TouchableHighlight>

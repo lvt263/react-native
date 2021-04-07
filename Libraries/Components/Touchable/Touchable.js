@@ -8,16 +8,21 @@
  * @format
  */
 
+'use strict';
+
 const BoundingDimensions = require('./BoundingDimensions');
 const Platform = require('../../Utilities/Platform');
 const Position = require('./Position');
 const React = require('react');
+const ReactNative = require('../../Renderer/shims/ReactNative');
+const StyleSheet = require('../../StyleSheet/StyleSheet');
+const TVEventHandler = require('../AppleTV/TVEventHandler');
 const UIManager = require('../../ReactNative/UIManager');
-const SoundManager = require('../Sound/SoundManager');
+const View = require('../View/View');
 
-import {PressabilityDebugView} from '../../Pressability/PressabilityDebug';
+const keyMirror = require('fbjs/lib/keyMirror');
+const normalizeColor = require('../../Color/normalizeColor');
 
-import type {ColorValue} from '../../StyleSheet/StyleSheet';
 import type {EdgeInsetsProp} from '../../StyleSheet/EdgeInsetsPropType';
 import type {PressEvent} from '../../Types/CoreEventTypes';
 
@@ -123,16 +128,16 @@ const extractSingleTouch = nativeEvent => {
  * Touchable states.
  */
 
-const States = {
-  NOT_RESPONDER: 'NOT_RESPONDER', // Not the responder
-  RESPONDER_INACTIVE_PRESS_IN: 'RESPONDER_INACTIVE_PRESS_IN', // Responder, inactive, in the `PressRect`
-  RESPONDER_INACTIVE_PRESS_OUT: 'RESPONDER_INACTIVE_PRESS_OUT', // Responder, inactive, out of `PressRect`
-  RESPONDER_ACTIVE_PRESS_IN: 'RESPONDER_ACTIVE_PRESS_IN', // Responder, active, in the `PressRect`
-  RESPONDER_ACTIVE_PRESS_OUT: 'RESPONDER_ACTIVE_PRESS_OUT', // Responder, active, out of `PressRect`
-  RESPONDER_ACTIVE_LONG_PRESS_IN: 'RESPONDER_ACTIVE_LONG_PRESS_IN', // Responder, active, in the `PressRect`, after long press threshold
-  RESPONDER_ACTIVE_LONG_PRESS_OUT: 'RESPONDER_ACTIVE_LONG_PRESS_OUT', // Responder, active, out of `PressRect`, after long press threshold
-  ERROR: 'ERROR',
-};
+const States = keyMirror({
+  NOT_RESPONDER: null, // Not the responder
+  RESPONDER_INACTIVE_PRESS_IN: null, // Responder, inactive, in the `PressRect`
+  RESPONDER_INACTIVE_PRESS_OUT: null, // Responder, inactive, out of `PressRect`
+  RESPONDER_ACTIVE_PRESS_IN: null, // Responder, active, in the `PressRect`
+  RESPONDER_ACTIVE_PRESS_OUT: null, // Responder, active, out of `PressRect`
+  RESPONDER_ACTIVE_LONG_PRESS_IN: null, // Responder, active, in the `PressRect`, after long press threshold
+  RESPONDER_ACTIVE_LONG_PRESS_OUT: null, // Responder, active, out of `PressRect`, after long press threshold
+  ERROR: null,
+});
 
 type State =
   | typeof States.NOT_RESPONDER
@@ -184,15 +189,15 @@ const IsLongPressingIn = {
 /**
  * Inputs to the state machine.
  */
-const Signals = {
-  DELAY: 'DELAY',
-  RESPONDER_GRANT: 'RESPONDER_GRANT',
-  RESPONDER_RELEASE: 'RESPONDER_RELEASE',
-  RESPONDER_TERMINATED: 'RESPONDER_TERMINATED',
-  ENTER_PRESS_RECT: 'ENTER_PRESS_RECT',
-  LEAVE_PRESS_RECT: 'LEAVE_PRESS_RECT',
-  LONG_PRESS_DETECTED: 'LONG_PRESS_DETECTED',
-};
+const Signals = keyMirror({
+  DELAY: null,
+  RESPONDER_GRANT: null,
+  RESPONDER_RELEASE: null,
+  RESPONDER_TERMINATED: null,
+  ENTER_PRESS_RECT: null,
+  LEAVE_PRESS_RECT: null,
+  LONG_PRESS_DETECTED: null,
+});
 
 type Signal =
   | typeof Signals.DELAY
@@ -365,12 +370,33 @@ const TouchableMixin = {
     if (!Platform.isTV) {
       return;
     }
+
+    this._tvEventHandler = new TVEventHandler();
+    this._tvEventHandler.enable(this, function(cmp, evt) {
+      const myTag = ReactNative.findNodeHandle(cmp);
+      evt.dispatchConfig = {};
+      if (myTag === evt.tag) {
+        if (evt.eventType === 'focus') {
+          cmp.touchableHandleFocus(evt);
+        } else if (evt.eventType === 'blur') {
+          cmp.touchableHandleBlur(evt);
+        } else if (evt.eventType === 'select') {
+          cmp.touchableHandlePress &&
+            !cmp.props.disabled &&
+            cmp.touchableHandlePress(evt);
+        }
+      }
+    });
   },
 
   /**
    * Clear all timeouts on unmount
    */
   componentWillUnmount: function() {
+    if (this._tvEventHandler) {
+      this._tvEventHandler.disable();
+      delete this._tvEventHandler;
+    }
     this.touchableDelayTimeout && clearTimeout(this.touchableDelayTimeout);
     this.longPressDelayTimeout && clearTimeout(this.longPressDelayTimeout);
     this.pressOutDelayTimeout && clearTimeout(this.pressOutDelayTimeout);
@@ -653,16 +679,12 @@ const TouchableMixin = {
    * @private
    */
   _remeasureMetricsOnActivation: function() {
-    const responderID = this.state.touchable.responderID;
-    if (responderID == null) {
+    const tag = this.state.touchable.responderID;
+    if (tag == null) {
       return;
     }
 
-    if (typeof responderID === 'number') {
-      UIManager.measure(responderID, this._handleQueryLayout);
-    } else {
-      responderID.measure(this._handleQueryLayout);
-    }
+    UIManager.measure(tag, this._handleQueryLayout);
   },
 
   _handleQueryLayout: function(
@@ -700,9 +722,18 @@ const TouchableMixin = {
     this.longPressDelayTimeout = null;
     const curState = this.state.touchable.touchState;
     if (
-      curState === States.RESPONDER_ACTIVE_PRESS_IN ||
-      curState === States.RESPONDER_ACTIVE_LONG_PRESS_IN
+      curState !== States.RESPONDER_ACTIVE_PRESS_IN &&
+      curState !== States.RESPONDER_ACTIVE_LONG_PRESS_IN
     ) {
+      console.error(
+        'Attempted to transition from state `' +
+          curState +
+          '` to `' +
+          States.RESPONDER_ACTIVE_LONG_PRESS_IN +
+          '`, which is not supported. This is ' +
+          'most likely due to `Touchable.longPressDelayTimeout` not being cancelled.',
+      );
+    } else {
       this._receiveSignal(Signals.LONG_PRESS_DETECTED, e);
     }
   },
@@ -729,10 +760,8 @@ const TouchableMixin = {
           '` or state `' +
           curState +
           '` for Touchable responder `' +
-          typeof this.state.touchable.responderID ===
-        'number'
-          ? this.state.touchable.responderID
-          : 'host component' + '`',
+          responderID +
+          '`',
       );
     }
     if (nextState === States.ERROR) {
@@ -742,10 +771,8 @@ const TouchableMixin = {
           '` to `' +
           signal +
           '` for responder `' +
-          typeof this.state.touchable.responderID ===
-        'number'
-          ? this.state.touchable.responderID
-          : '<<host component>>' + '`',
+          responderID +
+          '`',
       );
     }
     if (curState !== nextState) {
@@ -848,7 +875,7 @@ const TouchableMixin = {
           this._endHighlight(e);
         }
         if (Platform.OS === 'android' && !this.props.touchSoundDisabled) {
-          SoundManager.playTouchSound();
+          this._playTouchSound();
         }
         this.touchableHandlePress(e);
       }
@@ -856,6 +883,10 @@ const TouchableMixin = {
 
     this.touchableDelayTimeout && clearTimeout(this.touchableDelayTimeout);
     this.touchableDelayTimeout = null;
+  },
+
+  _playTouchSound: function() {
+    UIManager.playTouchSound();
   },
 
   _startHighlight: function(e: PressEvent) {
@@ -896,6 +927,7 @@ TouchableMixin.withoutDefaultFocusAndBlur = TouchableMixinWithoutDefaultFocusAnd
 
 const Touchable = {
   Mixin: TouchableMixin,
+  TOUCH_TARGET_DEBUG: false, // Highlights all touchable targets. Toggle with Inspector.
   /**
    * Renders a debugging overlay to visualize touch target with hitSlop (might not work on Android).
    */
@@ -903,15 +935,50 @@ const Touchable = {
     color,
     hitSlop,
   }: {
-    color: ColorValue,
+    color: string | number,
     hitSlop: EdgeInsetsProp,
-    ...
   }): null | React.Node => {
-    if (__DEV__) {
-      return <PressabilityDebugView color={color} hitSlop={hitSlop} />;
+    if (!Touchable.TOUCH_TARGET_DEBUG) {
+      return null;
     }
-    return null;
+    if (!__DEV__) {
+      throw Error(
+        'Touchable.TOUCH_TARGET_DEBUG should not be enabled in prod!',
+      );
+    }
+    const debugHitSlopStyle = {};
+    hitSlop = hitSlop || {top: 0, bottom: 0, left: 0, right: 0};
+    for (const key in hitSlop) {
+      debugHitSlopStyle[key] = -hitSlop[key];
+    }
+    const normalizedColor = normalizeColor(color);
+    if (typeof normalizedColor !== 'number') {
+      return null;
+    }
+    const hexColor =
+      '#' + ('00000000' + normalizedColor.toString(16)).substr(-8);
+    return (
+      <View
+        pointerEvents="none"
+        style={[
+          styles.debug,
+          {
+            borderColor: hexColor.slice(0, -2) + '55', // More opaque
+            backgroundColor: hexColor.slice(0, -2) + '0F', // Less opaque
+            ...debugHitSlopStyle,
+          },
+        ]}
+      />
+    );
   },
 };
+
+const styles = StyleSheet.create({
+  debug: {
+    position: 'absolute',
+    borderWidth: 1,
+    borderStyle: 'dashed',
+  },
+});
 
 module.exports = Touchable;

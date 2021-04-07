@@ -30,9 +30,6 @@ Pod::Spec.new do |spec|
   spec.module_name = 'yoga'
   spec.header_dir = 'yoga'
   spec.requires_arc = false
-  spec.pod_target_xcconfig = {
-      'DEFINES_MODULE' => 'YES'
-  }
   spec.compiler_flags = [
       '-fno-omit-frame-pointer',
       '-fexceptions',
@@ -43,7 +40,7 @@ Pod::Spec.new do |spec|
   ]
 
   # Pinning to the same version as React.podspec.
-  spec.platforms = { :ios => "11.0" }
+  spec.platforms = { :ios => "9.0", :tvos => "9.2" }
 
   # Set this environment variable when *not* using the `:path` option to install the pod.
   # E.g. when publishing this spec to a spec repo.
@@ -51,7 +48,7 @@ Pod::Spec.new do |spec|
   source_files = File.join('ReactCommon/yoga', source_files) if ENV['INSTALL_YOGA_WITHOUT_PATH_OPTION']
   spec.source_files = source_files
 
-  header_files = 'yoga/{Yoga,YGEnums,YGMacros,YGNode,YGStyle,YGValue}.h'
+  header_files = 'yoga/{Yoga,YGEnums,YGMacros,YGValue}.h'
   header_files = File.join('ReactCommon/yoga', header_files) if ENV['INSTALL_YOGA_WITHOUT_PATH_OPTION']
   spec.public_header_files = header_files
 end

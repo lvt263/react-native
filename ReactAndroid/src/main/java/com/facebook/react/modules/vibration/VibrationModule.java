@@ -1,25 +1,23 @@
-/*
+/**
  * Copyright (c) Facebook, Inc. and its affiliates.
  *
- * This source code is licensed under the MIT license found in the
- * LICENSE file in the root directory of this source tree.
+ * <p>This source code is licensed under the MIT license found in the LICENSE file in the root
+ * directory of this source tree.
  */
-
 package com.facebook.react.modules.vibration;
 
 import android.annotation.SuppressLint;
 import android.content.Context;
-import android.os.Build;
-import android.os.VibrationEffect;
 import android.os.Vibrator;
-import com.facebook.fbreact.specs.NativeVibrationSpec;
 import com.facebook.react.bridge.ReactApplicationContext;
+import com.facebook.react.bridge.ReactContextBaseJavaModule;
+import com.facebook.react.bridge.ReactMethod;
 import com.facebook.react.bridge.ReadableArray;
 import com.facebook.react.module.annotations.ReactModule;
 
 @SuppressLint("MissingPermission")
 @ReactModule(name = VibrationModule.NAME)
-public class VibrationModule extends NativeVibrationSpec {
+public class VibrationModule extends ReactContextBaseJavaModule {
 
   public static final String NAME = "Vibration";
 
@@ -32,44 +30,27 @@ public class VibrationModule extends NativeVibrationSpec {
     return NAME;
   }
 
-  @Override
-  public void vibrate(double durationDouble) {
-    int duration = (int) durationDouble;
-
+  @ReactMethod
+  public void vibrate(int duration) {
     Vibrator v = (Vibrator) getReactApplicationContext().getSystemService(Context.VIBRATOR_SERVICE);
-    if (v == null) {
-      return;
-    }
-
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-      v.vibrate(VibrationEffect.createOneShot(duration, VibrationEffect.DEFAULT_AMPLITUDE));
-    } else {
+    if (v != null) {
       v.vibrate(duration);
     }
   }
 
-  @Override
-  public void vibrateByPattern(ReadableArray pattern, double repeatDouble) {
-    int repeat = (int) repeatDouble;
-
+  @ReactMethod
+  public void vibrateByPattern(ReadableArray pattern, int repeat) {
     Vibrator v = (Vibrator) getReactApplicationContext().getSystemService(Context.VIBRATOR_SERVICE);
-    if (v == null) {
-      return;
-    }
-
-    long[] patternLong = new long[pattern.size()];
-    for (int i = 0; i < pattern.size(); i++) {
-      patternLong[i] = pattern.getInt(i);
-    }
-
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-      v.vibrate(VibrationEffect.createWaveform(patternLong, repeat));
-    } else {
+    if (v != null) {
+      long[] patternLong = new long[pattern.size()];
+      for (int i = 0; i < pattern.size(); i++) {
+        patternLong[i] = pattern.getInt(i);
+      }
       v.vibrate(patternLong, repeat);
     }
   }
 
-  @Override
+  @ReactMethod
   public void cancel() {
     Vibrator v = (Vibrator) getReactApplicationContext().getSystemService(Context.VIBRATOR_SERVICE);
     if (v != null) {

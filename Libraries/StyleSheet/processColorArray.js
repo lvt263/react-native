@@ -10,25 +10,10 @@
 
 'use strict';
 
-import type {ColorValue} from './StyleSheet';
-import processColor, {type ProcessedColorValue} from './processColor';
+const processColor = require('./processColor');
 
-const TRANSPARENT = 0; // rgba(0, 0, 0, 0)
-
-function processColorArray(
-  colors: ?$ReadOnlyArray<ColorValue>,
-): ?$ReadOnlyArray<ProcessedColorValue> {
-  return colors == null ? null : colors.map(processColorElement);
-}
-
-function processColorElement(color: ColorValue): ProcessedColorValue {
-  const value = processColor(color);
-  // For invalid colors, fallback to transparent.
-  if (value == null) {
-    console.error('Invalid value in color array:', color);
-    return TRANSPARENT;
-  }
-  return value;
+function processColorArray(colors: ?Array<string>): ?Array<?number> {
+  return colors == null ? null : colors.map(processColor);
 }
 
 module.exports = processColorArray;

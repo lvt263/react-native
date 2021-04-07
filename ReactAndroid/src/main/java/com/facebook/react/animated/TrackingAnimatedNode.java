@@ -1,10 +1,9 @@
-/*
+/**
  * Copyright (c) Facebook, Inc. and its affiliates.
  *
- * This source code is licensed under the MIT license found in the
- * LICENSE file in the root directory of this source tree.
+ * <p>This source code is licensed under the MIT license found in the LICENSE file in the root
+ * directory of this source tree.
  */
-
 package com.facebook.react.animated;
 
 import com.facebook.react.bridge.JavaOnlyMap;
@@ -32,19 +31,5 @@ import com.facebook.react.bridge.ReadableMap;
     mAnimationConfig.putDouble("toValue", ((ValueAnimatedNode) toValue).getValue());
     mNativeAnimatedNodesManager.startAnimatingNode(
         mAnimationId, mValueNode, mAnimationConfig, null);
-  }
-
-  @Override
-  public String prettyPrint() {
-    return "TrackingAnimatedNode["
-        + mTag
-        + "]: animationID: "
-        + mAnimationId
-        + " toValueNode: "
-        + mToValueNode
-        + " valueNode: "
-        + mValueNode
-        + " animationConfig: "
-        + mAnimationConfig;
   }
 }

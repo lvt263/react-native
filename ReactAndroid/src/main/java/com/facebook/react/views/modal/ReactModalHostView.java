@@ -1,10 +1,9 @@
-/*
+/**
  * Copyright (c) Facebook, Inc. and its affiliates.
  *
- * This source code is licensed under the MIT license found in the
- * LICENSE file in the root directory of this source tree.
+ * <p>This source code is licensed under the MIT license found in the LICENSE file in the root
+ * directory of this source tree.
  */
-
 package com.facebook.react.views.modal;
 
 import android.annotation.TargetApi;
@@ -17,27 +16,23 @@ import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.ViewStructure;
-import android.view.Window;
 import android.view.WindowManager;
 import android.view.accessibility.AccessibilityEvent;
 import android.widget.FrameLayout;
 import androidx.annotation.Nullable;
 import androidx.annotation.UiThread;
-import com.facebook.common.logging.FLog;
 import com.facebook.infer.annotation.Assertions;
 import com.facebook.react.R;
 import com.facebook.react.bridge.GuardedRunnable;
 import com.facebook.react.bridge.LifecycleEventListener;
 import com.facebook.react.bridge.ReactContext;
-import com.facebook.react.bridge.ReadableMap;
-import com.facebook.react.bridge.UiThreadUtil;
 import com.facebook.react.bridge.WritableMap;
 import com.facebook.react.bridge.WritableNativeMap;
 import com.facebook.react.common.annotations.VisibleForTesting;
-import com.facebook.react.uimanager.FabricViewStateManager;
 import com.facebook.react.uimanager.JSTouchDispatcher;
 import com.facebook.react.uimanager.PixelUtil;
 import com.facebook.react.uimanager.RootView;
+import com.facebook.react.uimanager.StateWrapper;
 import com.facebook.react.uimanager.UIManagerModule;
 import com.facebook.react.uimanager.events.EventDispatcher;
 import com.facebook.react.views.common.ContextUtils;
@@ -59,10 +54,7 @@ import java.util.ArrayList;
  *       around addition and removal of views to the DialogRootViewGroup.
  * </ol>
  */
-public class ReactModalHostView extends ViewGroup
-    implements LifecycleEventListener, FabricViewStateManager.HasFabricViewStateManager {
-
-  private static final String TAG = "ReactModalHost";
+public class ReactModalHostView extends ViewGroup implements LifecycleEventListener {
 
   // This listener is called when the user presses KeyEvent.KEYCODE_BACK
   // An event is then passed to JS which can either close or not close the Modal by setting the
@@ -74,7 +66,6 @@ public class ReactModalHostView extends ViewGroup
   private DialogRootViewGroup mHostView;
   private @Nullable Dialog mDialog;
   private boolean mTransparent;
-  private boolean mStatusBarTranslucent;
   private String mAnimationType;
   private boolean mHardwareAccelerated;
   // Set this flag to true if changing a particular property on the view requires a new Dialog to
@@ -103,15 +94,7 @@ public class ReactModalHostView extends ViewGroup
   }
 
   @Override
-  protected void onDetachedFromWindow() {
-    super.onDetachedFromWindow();
-    dismiss();
-  }
-
-  @Override
   public void addView(View child, int index) {
-    UiThreadUtil.assertOnUiThread();
-
     mHostView.addView(child, index);
   }
 
@@ -127,15 +110,11 @@ public class ReactModalHostView extends ViewGroup
 
   @Override
   public void removeView(View child) {
-    UiThreadUtil.assertOnUiThread();
-
     mHostView.removeView(child);
   }
 
   @Override
   public void removeViewAt(int index) {
-    UiThreadUtil.assertOnUiThread();
-
     View child = getChildAt(index);
     mHostView.removeView(child);
   }
@@ -159,8 +138,6 @@ public class ReactModalHostView extends ViewGroup
   }
 
   private void dismiss() {
-    UiThreadUtil.assertOnUiThread();
-
     if (mDialog != null) {
       if (mDialog.isShowing()) {
         Activity dialogContext =
@@ -190,11 +167,6 @@ public class ReactModalHostView extends ViewGroup
     mTransparent = transparent;
   }
 
-  protected void setStatusBarTranslucent(boolean statusBarTranslucent) {
-    mStatusBarTranslucent = statusBarTranslucent;
-    mPropertyRequiresNewDialog = true;
-  }
-
   protected void setAnimationType(String animationType) {
     mAnimationType = animationType;
     mPropertyRequiresNewDialog = true;
@@ -203,10 +175,6 @@ public class ReactModalHostView extends ViewGroup
   protected void setHardwareAccelerated(boolean hardwareAccelerated) {
     mHardwareAccelerated = hardwareAccelerated;
     mPropertyRequiresNewDialog = true;
-  }
-
-  void setEventDispatcher(EventDispatcher eventDispatcher) {
-    mHostView.setEventDispatcher(eventDispatcher);
   }
 
   @Override
@@ -242,20 +210,9 @@ public class ReactModalHostView extends ViewGroup
    * new Dialog.
    */
   protected void showOrUpdate() {
-    UiThreadUtil.assertOnUiThread();
-
     // If the existing Dialog is currently up, we may need to redraw it or we may be able to update
     // the property without having to recreate the dialog
     if (mDialog != null) {
-      Context dialogContext = ContextUtils.findContextOfType(mDialog.getContext(), Activity.class);
-      // TODO(T85755791): remove after investigation
-      FLog.e(
-          TAG,
-          "Updating existing dialog with context: "
-              + dialogContext
-              + "@"
-              + dialogContext.hashCode());
-
       if (mPropertyRequiresNewDialog) {
         dismiss();
       } else {
@@ -280,9 +237,6 @@ public class ReactModalHostView extends ViewGroup
         .setFlags(
             WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE,
             WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE);
-
-    // TODO(T85755791): remove after investigation
-    FLog.e(TAG, "Creating new dialog from context: " + context + "@" + context.hashCode());
 
     mDialog.setContentView(getContentView());
     updateProperties();
@@ -338,6 +292,11 @@ public class ReactModalHostView extends ViewGroup
     }
   }
 
+  @UiThread
+  public void updateState(StateWrapper stateWrapper, int width, int height) {
+    mHostView.updateState(stateWrapper, width, height);
+  }
+
   /**
    * Returns the view that will be the root view of the dialog. We are wrapping this in a
    * FrameLayout because this is the system's way of notifying us that the dialog size has changed.
@@ -347,11 +306,7 @@ public class ReactModalHostView extends ViewGroup
   private View getContentView() {
     FrameLayout frameLayout = new FrameLayout(getContext());
     frameLayout.addView(mHostView);
-    if (mStatusBarTranslucent) {
-      frameLayout.setSystemUiVisibility(View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN);
-    } else {
-      frameLayout.setFitsSystemWindows(true);
-    }
+    frameLayout.setFitsSystemWindows(true);
     return frameLayout;
   }
 
@@ -364,36 +319,25 @@ public class ReactModalHostView extends ViewGroup
     Assertions.assertNotNull(mDialog, "mDialog must exist when we call updateProperties");
 
     Activity currentActivity = getCurrentActivity();
-
-    Window window = mDialog.getWindow();
-    if (currentActivity == null || currentActivity.isFinishing() || !window.isActive()) {
-      // If the activity has disappeared, then we shouldn't update the window associated to the
-      // Dialog.
-      return;
-    }
-    int activityWindowFlags = currentActivity.getWindow().getAttributes().flags;
-    if ((activityWindowFlags & WindowManager.LayoutParams.FLAG_FULLSCREEN) != 0) {
-      window.addFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN);
-    } else {
-      window.clearFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN);
+    if (currentActivity != null) {
+      int activityWindowFlags = currentActivity.getWindow().getAttributes().flags;
+      if ((activityWindowFlags & WindowManager.LayoutParams.FLAG_FULLSCREEN) != 0) {
+        mDialog.getWindow().addFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN);
+      } else {
+        mDialog.getWindow().clearFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN);
+      }
     }
 
     if (mTransparent) {
-      window.clearFlags(WindowManager.LayoutParams.FLAG_DIM_BEHIND);
+      mDialog.getWindow().clearFlags(WindowManager.LayoutParams.FLAG_DIM_BEHIND);
     } else {
-      window.setDimAmount(0.5f);
-      window.setFlags(
-          WindowManager.LayoutParams.FLAG_DIM_BEHIND, WindowManager.LayoutParams.FLAG_DIM_BEHIND);
+      mDialog.getWindow().setDimAmount(0.5f);
+      mDialog
+          .getWindow()
+          .setFlags(
+              WindowManager.LayoutParams.FLAG_DIM_BEHIND,
+              WindowManager.LayoutParams.FLAG_DIM_BEHIND);
     }
-  }
-
-  @Override
-  public FabricViewStateManager getFabricViewStateManager() {
-    return mHostView.getFabricViewStateManager();
-  }
-
-  public void updateState(final int width, final int height) {
-    mHostView.updateState(width, height);
   }
 
   /**
@@ -407,23 +351,17 @@ public class ReactModalHostView extends ViewGroup
    * styleHeight on the LayoutShadowNode to be the window size. This is done through the
    * UIManagerModule, and will then cause the children to layout as if they can fill the window.
    */
-  static class DialogRootViewGroup extends ReactViewGroup
-      implements RootView, FabricViewStateManager.HasFabricViewStateManager {
+  static class DialogRootViewGroup extends ReactViewGroup implements RootView {
     private boolean hasAdjustedSize = false;
     private int viewWidth;
     private int viewHeight;
-    private EventDispatcher mEventDispatcher;
 
-    private final FabricViewStateManager mFabricViewStateManager = new FabricViewStateManager();
+    private @Nullable StateWrapper mStateWrapper;
 
     private final JSTouchDispatcher mJSTouchDispatcher = new JSTouchDispatcher(this);
 
     public DialogRootViewGroup(Context context) {
       super(context);
-    }
-
-    private void setEventDispatcher(EventDispatcher eventDispatcher) {
-      mEventDispatcher = eventDispatcher;
     }
 
     @Override
@@ -438,9 +376,9 @@ public class ReactModalHostView extends ViewGroup
       if (getChildCount() > 0) {
         hasAdjustedSize = false;
         final int viewTag = getChildAt(0).getId();
-        if (mFabricViewStateManager.hasStateWrapper()) {
+        if (mStateWrapper != null) {
           // This will only be called under Fabric
-          updateState(viewWidth, viewHeight);
+          updateState(mStateWrapper, viewWidth, viewHeight);
         } else {
           // TODO: T44725185 remove after full migration to Fabric
           ReactContext reactContext = getReactContext();
@@ -448,14 +386,9 @@ public class ReactModalHostView extends ViewGroup
               new GuardedRunnable(reactContext) {
                 @Override
                 public void runGuarded() {
-                  UIManagerModule uiManager =
-                      (getReactContext()).getNativeModule(UIManagerModule.class);
-
-                  if (uiManager == null) {
-                    return;
-                  }
-
-                  uiManager.updateNodeSize(viewTag, viewWidth, viewHeight);
+                  (getReactContext())
+                      .getNativeModule(UIManagerModule.class)
+                      .updateNodeSize(viewTag, viewWidth, viewHeight);
                 }
               });
         }
@@ -465,38 +398,12 @@ public class ReactModalHostView extends ViewGroup
     }
 
     @UiThread
-    public void updateState(final int width, final int height) {
-      final float realWidth = PixelUtil.toDIPFromPixel(width);
-      final float realHeight = PixelUtil.toDIPFromPixel(height);
-
-      // Check incoming state values. If they're already the correct value, return early to prevent
-      // infinite UpdateState/SetState loop.
-      ReadableMap currentState = getFabricViewStateManager().getStateData();
-      if (currentState != null) {
-        float delta = (float) 0.9;
-        float stateScreenHeight =
-            currentState.hasKey("screenHeight")
-                ? (float) currentState.getDouble("screenHeight")
-                : 0;
-        float stateScreenWidth =
-            currentState.hasKey("screenWidth") ? (float) currentState.getDouble("screenWidth") : 0;
-
-        if (Math.abs(stateScreenWidth - realWidth) < delta
-            && Math.abs(stateScreenHeight - realHeight) < delta) {
-          return;
-        }
-      }
-
-      mFabricViewStateManager.setState(
-          new FabricViewStateManager.StateUpdateCallback() {
-            @Override
-            public WritableMap getStateUpdate() {
-              WritableMap map = new WritableNativeMap();
-              map.putDouble("screenWidth", realWidth);
-              map.putDouble("screenHeight", realHeight);
-              return map;
-            }
-          });
+    public void updateState(StateWrapper stateWrapper, int width, int height) {
+      mStateWrapper = stateWrapper;
+      WritableMap map = new WritableNativeMap();
+      map.putDouble("screenWidth", PixelUtil.toDIPFromPixel(width));
+      map.putDouble("screenHeight", PixelUtil.toDIPFromPixel(height));
+      stateWrapper.updateState(map);
     }
 
     @Override
@@ -518,13 +425,13 @@ public class ReactModalHostView extends ViewGroup
 
     @Override
     public boolean onInterceptTouchEvent(MotionEvent event) {
-      mJSTouchDispatcher.handleTouchEvent(event, mEventDispatcher);
+      mJSTouchDispatcher.handleTouchEvent(event, getEventDispatcher());
       return super.onInterceptTouchEvent(event);
     }
 
     @Override
     public boolean onTouchEvent(MotionEvent event) {
-      mJSTouchDispatcher.handleTouchEvent(event, mEventDispatcher);
+      mJSTouchDispatcher.handleTouchEvent(event, getEventDispatcher());
       super.onTouchEvent(event);
       // In case when there is no children interested in handling touch event, we return true from
       // the root view in order to receive subsequent events related to that gesture
@@ -533,7 +440,7 @@ public class ReactModalHostView extends ViewGroup
 
     @Override
     public void onChildStartedNativeGesture(MotionEvent androidEvent) {
-      mJSTouchDispatcher.onChildStartedNativeGesture(androidEvent, mEventDispatcher);
+      mJSTouchDispatcher.onChildStartedNativeGesture(androidEvent, getEventDispatcher());
     }
 
     @Override
@@ -542,9 +449,9 @@ public class ReactModalHostView extends ViewGroup
       // even when some other view disallow that
     }
 
-    @Override
-    public FabricViewStateManager getFabricViewStateManager() {
-      return mFabricViewStateManager;
+    private EventDispatcher getEventDispatcher() {
+      ReactContext reactContext = getReactContext();
+      return reactContext.getNativeModule(UIManagerModule.class).getEventDispatcher();
     }
   }
 }

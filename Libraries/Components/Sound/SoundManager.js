@@ -5,16 +5,15 @@
  * LICENSE file in the root directory of this source tree.
  *
  * @format
- * @flow strict
+ * @flow
  */
 
+'use strict';
 import NativeSoundManager from './NativeSoundManager';
 
 const SoundManager = {
   playTouchSound: function(): void {
-    if (NativeSoundManager) {
-      NativeSoundManager.playTouchSound();
-    }
+    NativeSoundManager.playTouchSound();
   },
 };
 

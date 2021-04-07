@@ -3,7 +3,6 @@ load("//tools/build_defs/oss:rn_defs.bzl", "react_native_dep", "react_native_int
 rn_android_library(
     name = "tests",
     srcs = glob(["*.java"]),
-    autoglob = False,
     is_androidx = True,
     visibility = [
         "PUBLIC",
@@ -29,6 +28,7 @@ rn_android_library(
         react_native_target("java/com/facebook/react/modules/deviceinfo:deviceinfo"),
         react_native_target("java/com/facebook/react/modules/share:share"),
         react_native_target("java/com/facebook/react/modules/systeminfo:systeminfo"),
+        react_native_target("java/com/facebook/react/modules/timepicker:timepicker"),
         react_native_target("java/com/facebook/react/touch:touch"),
         react_native_target("java/com/facebook/react/uimanager:uimanager"),
         react_native_target("java/com/facebook/react/uimanager/annotations:annotations"),

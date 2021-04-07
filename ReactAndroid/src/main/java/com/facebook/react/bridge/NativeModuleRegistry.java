@@ -1,14 +1,12 @@
-/*
+/**
  * Copyright (c) Facebook, Inc. and its affiliates.
  *
- * This source code is licensed under the MIT license found in the
- * LICENSE file in the root directory of this source tree.
+ * <p>This source code is licensed under the MIT license found in the LICENSE file in the root
+ * directory of this source tree.
  */
-
 package com.facebook.react.bridge;
 
 import com.facebook.infer.annotation.Assertions;
-import com.facebook.react.config.ReactFeatureFlags;
 import com.facebook.react.module.annotations.ReactModule;
 import com.facebook.systrace.Systrace;
 import java.util.ArrayList;
@@ -84,9 +82,6 @@ public class NativeModuleRegistry {
     try {
       for (ModuleHolder module : mModules.values()) {
         module.destroy();
-      }
-      if (ReactFeatureFlags.enableReactContextCleanupFix) {
-        mModules.clear();
       }
     } finally {
       Systrace.endSection(Systrace.TRACE_TAG_REACT_JAVA_BRIDGE);

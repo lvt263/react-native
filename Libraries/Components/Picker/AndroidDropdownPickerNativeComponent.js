@@ -5,29 +5,26 @@
  * LICENSE file in the root directory of this source tree.
  *
  * @format
- * @flow strict-local
+ * @flow
  */
 
-import * as React from 'react';
+'use strict';
 
-import codegenNativeCommands from '../../Utilities/codegenNativeCommands';
+import {requireNativeComponent} from 'react-native';
 
 import type {
   DirectEventHandler,
   Int32,
   WithDefault,
 } from '../../Types/CodegenTypes';
-
-import * as NativeComponentRegistry from '../../NativeComponent/NativeComponentRegistry';
-import type {HostComponent} from '../../Renderer/shims/ReactNativeTypes';
 import type {TextStyleProp} from '../../StyleSheet/StyleSheet';
-import type {ColorValue} from '../../StyleSheet/StyleSheet';
-import type {ProcessedColorValue} from '../../StyleSheet/processColor';
+import type {ColorValue} from '../../StyleSheet/StyleSheetTypes';
+import type {NativeComponent} from '../../Renderer/shims/ReactNative';
 import type {ViewProps} from '../../Components/View/ViewPropTypes';
 
 type PickerItem = $ReadOnly<{|
   label: string,
-  color?: ?ProcessedColorValue,
+  color?: ?Int32,
 |}>;
 
 type PickerItemSelectEvent = $ReadOnly<{|
@@ -40,7 +37,6 @@ type NativeProps = $ReadOnly<{|
 
   // Props
   color?: ?ColorValue,
-  backgroundColor?: ?ColorValue,
   enabled?: WithDefault<boolean, true>,
   items: $ReadOnlyArray<PickerItem>,
   prompt?: WithDefault<string, ''>,
@@ -50,33 +46,8 @@ type NativeProps = $ReadOnly<{|
   onSelect?: DirectEventHandler<PickerItemSelectEvent>,
 |}>;
 
-interface NativeCommands {
-  +setNativeSelectedPosition: (
-    viewRef: React.ElementRef<typeof AndroidDropdownPickerNativeComponent>,
-    index: number,
-  ) => void;
-}
+type ReactPicker = Class<NativeComponent<NativeProps>>;
 
-export const Commands: NativeCommands = codegenNativeCommands<NativeCommands>({
-  supportedCommands: ['setNativeSelectedPosition'],
-});
-
-const AndroidDropdownPickerNativeComponent: HostComponent<NativeProps> = NativeComponentRegistry.get<NativeProps>(
+module.exports = ((requireNativeComponent(
   'AndroidDropdownPicker',
-  () => ({
-    uiViewClassName: 'AndroidDropdownPicker',
-    bubblingEventTypes: {},
-    directEventTypes: {},
-    validAttributes: {
-      color: {process: require('../../StyleSheet/processColor')},
-      backgroundColor: {process: require('../../StyleSheet/processColor')},
-      enabled: true,
-      items: true,
-      prompt: true,
-      selected: true,
-      onSelect: true,
-    },
-  }),
-);
-
-export default AndroidDropdownPickerNativeComponent;
+): any): ReactPicker);

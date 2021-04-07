@@ -5,7 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  *
  * @format
- * @flow strict
+ * @flow
  */
 
 'use strict';
@@ -19,9 +19,9 @@ type SimpleTask = {
 };
 type PromiseTask = {
   name: string,
-  gen: () => Promise<void>,
+  gen: () => Promise<any>,
 };
-export type Task = SimpleTask | PromiseTask | (() => void);
+export type Task = Function | SimpleTask | PromiseTask;
 
 const DEBUG: false = false;
 
@@ -49,7 +49,7 @@ class TaskQueue {
    * `onMoreTasks` is invoked when `PromiseTask`s resolve if there are more
    * tasks to process.
    */
-  constructor({onMoreTasks}: {onMoreTasks: () => void, ...}) {
+  constructor({onMoreTasks}: {onMoreTasks: () => void}) {
     this._onMoreTasks = onMoreTasks;
     this._queueStack = [{tasks: [], popable: false}];
   }
@@ -99,10 +99,10 @@ class TaskQueue {
     if (queue.length) {
       const task = queue.shift();
       try {
-        if (typeof task === 'object' && task.gen) {
+        if (task.gen) {
           DEBUG && infoLog('TaskQueue: genPromise for task ' + task.name);
-          this._genPromise(task);
-        } else if (typeof task === 'object' && task.run) {
+          this._genPromise((task: any)); // Rather than annoying tagged union
+        } else if (task.run) {
           DEBUG && infoLog('TaskQueue: run task ' + task.name);
           task.run();
         } else {
@@ -122,11 +122,7 @@ class TaskQueue {
     }
   }
 
-  _queueStack: Array<{
-    tasks: Array<Task>,
-    popable: boolean,
-    ...
-  }>;
+  _queueStack: Array<{tasks: Array<Task>, popable: boolean}>;
   _onMoreTasks: () => void;
 
   _getCurrentQueue(): Array<Task> {
@@ -156,7 +152,6 @@ class TaskQueue {
     // happens once it is fully processed.
     this._queueStack.push({tasks: [], popable: false});
     const stackIdx = this._queueStack.length - 1;
-    const stackItem = this._queueStack[stackIdx];
     DEBUG && infoLog('TaskQueue: push new queue: ', {stackIdx});
     DEBUG && infoLog('TaskQueue: exec gen task ' + task.name);
     task
@@ -167,11 +162,13 @@ class TaskQueue {
             stackIdx,
             queueStackSize: this._queueStack.length,
           });
-        stackItem.popable = true;
+        this._queueStack[stackIdx].popable = true;
         this.hasTasksToProcess() && this._onMoreTasks();
       })
       .catch(ex => {
-        ex.message = `TaskQueue: Error resolving Promise in task ${task.name}: ${ex.message}`;
+        ex.message = `TaskQueue: Error resolving Promise in task ${
+          task.name
+        }: ${ex.message}`;
         throw ex;
       })
       .done();

@@ -5,28 +5,24 @@
  * LICENSE file in the root directory of this source tree.
  *
  * @format
- * @flow strict-local
+ * @flow
  */
 
-import RCTDeviceEventEmitter from '../../EventEmitter/RCTDeviceEventEmitter';
+'use strict';
+
 import NativeAccessibilityInfo from './NativeAccessibilityInfo';
-import type {EventSubscription} from 'react-native/Libraries/vendor/emitter/EventEmitter';
-import type {HostComponent} from '../../Renderer/shims/ReactNativeTypes';
-import {sendAccessibilityEvent} from '../../Renderer/shims/ReactNative';
-import legacySendAccessibilityEvent from './legacySendAccessibilityEvent';
-import {type ElementRef} from 'react';
+
+const RCTDeviceEventEmitter = require('../../EventEmitter/RCTDeviceEventEmitter');
+const UIManager = require('../../ReactNative/UIManager');
 
 const REDUCE_MOTION_EVENT = 'reduceMotionDidChange';
 const TOUCH_EXPLORATION_EVENT = 'touchExplorationDidChange';
 
-type AccessibilityEventDefinitions = {
-  reduceMotionChanged: [boolean],
-  screenReaderChanged: [boolean],
-  // alias for screenReaderChanged
-  change: [boolean],
-};
-
-type AccessibilityEventTypes = 'focus' | 'click';
+type ChangeEventName = $Keys<{
+  change: string,
+  reduceMotionChanged: string,
+  screenReaderChanged: string,
+}>;
 
 const _subscriptions = new Map();
 
@@ -37,7 +33,7 @@ const _subscriptions = new Map();
  * well as to register to be notified when the state of the screen reader
  * changes.
  *
- * See https://reactnative.dev/docs/accessibilityinfo.html
+ * See http://facebook.github.io/react-native/docs/accessibilityinfo.html
  */
 
 const AccessibilityInfo = {
@@ -89,106 +85,73 @@ const AccessibilityInfo = {
     });
   },
 
-  addEventListener: function<K: $Keys<AccessibilityEventDefinitions>>(
-    eventName: K,
-    handler: (...$ElementType<AccessibilityEventDefinitions, K>) => void,
-  ): EventSubscription {
+  /**
+   * Deprecated
+   *
+   * Same as `isScreenReaderEnabled`
+   */
+  get fetch() {
+    return this.isScreenReaderEnabled;
+  },
+
+  addEventListener: function(
+    eventName: ChangeEventName,
+    handler: Function,
+  ): void {
     let listener;
 
     if (eventName === 'change' || eventName === 'screenReaderChanged') {
       listener = RCTDeviceEventEmitter.addListener(
         TOUCH_EXPLORATION_EVENT,
-        handler,
+        enabled => {
+          handler(enabled);
+        },
       );
     } else if (eventName === 'reduceMotionChanged') {
       listener = RCTDeviceEventEmitter.addListener(
         REDUCE_MOTION_EVENT,
-        handler,
+        enabled => {
+          handler(enabled);
+        },
       );
     }
 
-    // $FlowFixMe[escaped-generic]
     _subscriptions.set(handler, listener);
-
-    return {
-      remove: () => {
-        // $FlowIssue flow does not recognize handler properly
-        AccessibilityInfo.removeEventListener<K>(eventName, handler);
-      },
-    };
   },
 
-  removeEventListener: function<K: $Keys<AccessibilityEventDefinitions>>(
-    eventName: K,
-    handler: (...$ElementType<AccessibilityEventDefinitions, K>) => void,
+  removeEventListener: function(
+    eventName: ChangeEventName,
+    handler: Function,
   ): void {
-    // $FlowFixMe[escaped-generic]
     const listener = _subscriptions.get(handler);
     if (!listener) {
       return;
     }
     listener.remove();
-    // $FlowFixMe[escaped-generic]
     _subscriptions.delete(handler);
   },
 
   /**
    * Set accessibility focus to a react component.
    *
-   * See https://reactnative.dev/docs/accessibilityinfo.html#setaccessibilityfocus
+   * See http://facebook.github.io/react-native/docs/accessibilityinfo.html#setaccessibilityfocus
    */
   setAccessibilityFocus: function(reactTag: number): void {
-    legacySendAccessibilityEvent(reactTag, 'focus');
-  },
-
-  /**
-   * Send a named accessibility event to a HostComponent.
-   */
-  sendAccessibilityEvent_unstable: function(
-    handle: ElementRef<HostComponent<mixed>>,
-    eventType: AccessibilityEventTypes,
-  ) {
-    // route through React renderer to distinguish between Fabric and non-Fabric handles
-    // iOS only supports 'focus' event types
-    if (eventType === 'focus') {
-      sendAccessibilityEvent(handle, eventType);
-    } else if (eventType === 'click') {
-      // Do nothing!
-    }
+    UIManager.sendAccessibilityEvent(
+      reactTag,
+      UIManager.getConstants().AccessibilityEventTypes.typeViewFocused,
+    );
   },
 
   /**
    * Post a string to be announced by the screen reader.
    *
-   * See https://reactnative.dev/docs/accessibilityinfo.html#announceforaccessibility
+   * See http://facebook.github.io/react-native/docs/accessibilityinfo.html#announceforaccessibility
    */
   announceForAccessibility: function(announcement: string): void {
     if (NativeAccessibilityInfo) {
       NativeAccessibilityInfo.announceForAccessibility(announcement);
     }
-  },
-
-  /**
-   * Get the recommended timeout for changes to the UI needed by this user.
-   *
-   * See https://reactnative.dev/docs/accessibilityinfo.html#getRecommendedTimeoutMillis
-   */
-  getRecommendedTimeoutMillis: function(
-    originalTimeout: number,
-  ): Promise<number> {
-    return new Promise((resolve, reject) => {
-      if (
-        NativeAccessibilityInfo &&
-        NativeAccessibilityInfo.getRecommendedTimeoutMillis
-      ) {
-        NativeAccessibilityInfo.getRecommendedTimeoutMillis(
-          originalTimeout,
-          resolve,
-        );
-      } else {
-        resolve(originalTimeout);
-      }
-    });
   },
 };
 

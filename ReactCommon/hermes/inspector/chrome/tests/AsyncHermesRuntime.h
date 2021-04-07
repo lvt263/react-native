@@ -1,9 +1,4 @@
-/*
- * Copyright (c) Facebook, Inc. and its affiliates.
- *
- * This source code is licensed under the MIT license found in the
- * LICENSE file in the root directory of this source tree.
- */
+// Copyright 2004-present Facebook. All Rights Reserved.
 
 #include <atomic>
 #include <chrono>
@@ -27,9 +22,7 @@ namespace chrome {
  */
 class AsyncHermesRuntime {
  public:
-  // Create a runtime. If veryLazy, configure the runtime to use completely
-  // lazy compilation.
-  AsyncHermesRuntime(bool veryLazy = false);
+  AsyncHermesRuntime();
   ~AsyncHermesRuntime();
 
   std::shared_ptr<HermesRuntime> runtime() {
@@ -53,11 +46,6 @@ class AsyncHermesRuntime {
    * to storeValue() by the JS script.
    */
   folly::Future<jsi::Value> getStoredValue();
-
-  /**
-   * hasStoredValue returns whether or not a value has been stored yet
-   */
-  bool hasStoredValue();
 
   /**
    * awaitStoredValue is a helper for getStoredValue that returns the value

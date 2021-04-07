@@ -8,11 +8,14 @@
  * @flow
  */
 
+'use strict';
+
 const AppContainer = require('./AppContainer');
 import GlobalPerformanceLogger from '../Utilities/GlobalPerformanceLogger';
 import type {IPerformanceLogger} from '../Utilities/createPerformanceLogger';
 import PerformanceLoggerContext from '../Utilities/PerformanceLoggerContext';
 const React = require('react');
+const ReactFabricIndicator = require('./ReactFabricIndicator');
 
 const invariant = require('invariant');
 
@@ -25,48 +28,30 @@ function renderApplication<Props: Object>(
   rootTag: any,
   WrapperComponent?: ?React.ComponentType<*>,
   fabric?: boolean,
-  showArchitectureIndicator?: boolean,
+  showFabricIndicator?: boolean,
   scopedPerformanceLogger?: IPerformanceLogger,
-  isLogBox?: boolean,
-  debugName?: string,
 ) {
   invariant(rootTag, 'Expect to have a valid rootTag, instead got ', rootTag);
 
-  const performanceLogger = scopedPerformanceLogger ?? GlobalPerformanceLogger;
-
-  let renderable = (
-    <PerformanceLoggerContext.Provider value={performanceLogger}>
-      <AppContainer
-        rootTag={rootTag}
-        fabric={fabric}
-        showArchitectureIndicator={showArchitectureIndicator}
-        WrapperComponent={WrapperComponent}
-        initialProps={initialProps ?? Object.freeze({})}
-        internal_excludeLogBox={isLogBox}>
+  const renderable = (
+    <PerformanceLoggerContext.Provider
+      value={scopedPerformanceLogger ?? GlobalPerformanceLogger}>
+      <AppContainer rootTag={rootTag} WrapperComponent={WrapperComponent}>
         <RootComponent {...initialProps} rootTag={rootTag} />
+        {fabric === true && showFabricIndicator === true ? (
+          <ReactFabricIndicator />
+        ) : null}
       </AppContainer>
     </PerformanceLoggerContext.Provider>
   );
 
-  if (__DEV__ && debugName) {
-    const RootComponentWithMeaningfulName = ({children}) => children;
-    RootComponentWithMeaningfulName.displayName = `${debugName}(RootComponent)`;
-    renderable = (
-      <RootComponentWithMeaningfulName>
-        {renderable}
-      </RootComponentWithMeaningfulName>
-    );
-  }
-
-  performanceLogger.startTimespan('renderApplication_React_render');
-  performanceLogger.setExtra('usedReactFabric', fabric ? '1' : '0');
-
+  GlobalPerformanceLogger.startTimespan('renderApplication_React_render');
   if (fabric) {
     require('../Renderer/shims/ReactFabric').render(renderable, rootTag);
   } else {
     require('../Renderer/shims/ReactNative').render(renderable, rootTag);
   }
-  performanceLogger.stopTimespan('renderApplication_React_render');
+  GlobalPerformanceLogger.stopTimespan('renderApplication_React_render');
 }
 
 module.exports = renderApplication;

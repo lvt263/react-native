@@ -1,10 +1,9 @@
-/*
+/**
  * Copyright (c) Facebook, Inc. and its affiliates.
  *
- * This source code is licensed under the MIT license found in the
- * LICENSE file in the root directory of this source tree.
+ * <p>This source code is licensed under the MIT license found in the LICENSE file in the root
+ * directory of this source tree.
  */
-
 package com.facebook.react.modules.network;
 
 import static org.fest.assertions.api.Assertions.assertThat;
@@ -32,8 +31,7 @@ public class ReactCookieJarContainerTest {
   @Test
   public void testMissingJar() throws Exception {
     ReactCookieJarContainer jarContainer = mock(ReactCookieJarContainer.class);
-    assertThat(jarContainer.loadForRequest(HttpUrl.parse("http://example.com")).size())
-        .isEqualTo(0);
+    assertThat(jarContainer.loadForRequest(any(HttpUrl.class)).size()).isEqualTo(0);
   }
 
   @Test
@@ -41,8 +39,7 @@ public class ReactCookieJarContainerTest {
     ReactCookieJarContainer jarContainer = mock(ReactCookieJarContainer.class);
     List<Cookie> cookies = new ArrayList<>();
     when(jarContainer.loadForRequest(any(HttpUrl.class))).thenReturn(cookies);
-    assertThat(jarContainer.loadForRequest(HttpUrl.parse("http://example.com")).size())
-        .isEqualTo(0);
+    assertThat(jarContainer.loadForRequest(any(HttpUrl.class)).size()).isEqualTo(0);
   }
 
   @Test
@@ -53,8 +50,7 @@ public class ReactCookieJarContainerTest {
     List<Cookie> cookies = new ArrayList<>();
     cookies.add(new Cookie.Builder().name("valid").value("valid value").domain("domain").build());
     when(cookieJar.loadForRequest(any(HttpUrl.class))).thenReturn(cookies);
-    assertThat(jarContainer.loadForRequest(HttpUrl.parse("http://example.com")).size())
-        .isEqualTo(1);
+    assertThat(jarContainer.loadForRequest(any(HttpUrl.class)).size()).isEqualTo(1);
   }
 
   @Test
@@ -65,7 +61,6 @@ public class ReactCookieJarContainerTest {
     List<Cookie> cookies = new ArrayList<>();
     cookies.add(new Cookie.Builder().name("valid").value("înválíd välūė").domain("domain").build());
     when(cookieJar.loadForRequest(any(HttpUrl.class))).thenReturn(cookies);
-    assertThat(jarContainer.loadForRequest(HttpUrl.parse("http://example.com")).size())
-        .isEqualTo(0);
+    assertThat(jarContainer.loadForRequest(any(HttpUrl.class)).size()).isEqualTo(0);
   }
 }

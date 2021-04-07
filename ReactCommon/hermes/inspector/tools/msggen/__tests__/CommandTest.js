@@ -3,9 +3,12 @@
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
+ *
  */
 
-import {Command} from '../src/Command.js';
+'use strict';
+
+import { Command } from '../src/Command.js';
 
 test('parses simple command', () => {
   let obj = {

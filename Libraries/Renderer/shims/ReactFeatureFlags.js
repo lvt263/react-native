@@ -5,8 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  *
  * @format
- * @flow strict-local
- * @generated SignedSource<<7fc82101078b5f2226a6b58a9715ec95>>
+ * @flow
  */
 
 'use strict';

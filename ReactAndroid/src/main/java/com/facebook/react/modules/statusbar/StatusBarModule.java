@@ -1,10 +1,9 @@
-/*
+/**
  * Copyright (c) Facebook, Inc. and its affiliates.
  *
- * This source code is licensed under the MIT license found in the
- * LICENSE file in the root directory of this source tree.
+ * <p>This source code is licensed under the MIT license found in the LICENSE file in the root
+ * directory of this source tree.
  */
-
 package com.facebook.react.modules.statusbar;
 
 import android.animation.ArgbEvaluator;
@@ -19,10 +18,11 @@ import android.view.WindowManager;
 import androidx.annotation.Nullable;
 import androidx.core.view.ViewCompat;
 import com.facebook.common.logging.FLog;
-import com.facebook.fbreact.specs.NativeStatusBarManagerAndroidSpec;
 import com.facebook.react.bridge.GuardedRunnable;
 import com.facebook.react.bridge.NativeModule;
 import com.facebook.react.bridge.ReactApplicationContext;
+import com.facebook.react.bridge.ReactContextBaseJavaModule;
+import com.facebook.react.bridge.ReactMethod;
 import com.facebook.react.bridge.UiThreadUtil;
 import com.facebook.react.common.MapBuilder;
 import com.facebook.react.common.ReactConstants;
@@ -32,7 +32,7 @@ import java.util.Map;
 
 /** {@link NativeModule} that allows changing the appearance of the status bar. */
 @ReactModule(name = StatusBarModule.NAME)
-public class StatusBarModule extends NativeStatusBarManagerAndroidSpec {
+public class StatusBarModule extends ReactContextBaseJavaModule {
 
   private static final String HEIGHT_KEY = "HEIGHT";
   private static final String DEFAULT_BACKGROUND_COLOR_KEY = "DEFAULT_BACKGROUND_COLOR";
@@ -48,7 +48,7 @@ public class StatusBarModule extends NativeStatusBarManagerAndroidSpec {
   }
 
   @Override
-  public @Nullable Map<String, Object> getTypedExportedConstants() {
+  public @Nullable Map<String, Object> getConstants() {
     final Context context = getReactApplicationContext();
     final Activity activity = getCurrentActivity();
 
@@ -60,7 +60,7 @@ public class StatusBarModule extends NativeStatusBarManagerAndroidSpec {
             : 0;
     String statusBarColorString = "black";
 
-    if (activity != null) {
+    if (activity != null && Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
       final int statusBarColor = activity.getWindow().getStatusBarColor();
       statusBarColorString = String.format("#%06X", (0xFFFFFF & statusBarColor));
     }
@@ -69,10 +69,8 @@ public class StatusBarModule extends NativeStatusBarManagerAndroidSpec {
         HEIGHT_KEY, height, DEFAULT_BACKGROUND_COLOR_KEY, statusBarColorString);
   }
 
-  @Override
-  public void setColor(final double colorDouble, final boolean animated) {
-    final int color = (int) colorDouble;
-
+  @ReactMethod
+  public void setColor(final int color, final boolean animated) {
     final Activity activity = getCurrentActivity();
     if (activity == null) {
       FLog.w(
@@ -81,36 +79,41 @@ public class StatusBarModule extends NativeStatusBarManagerAndroidSpec {
       return;
     }
 
-    UiThreadUtil.runOnUiThread(
-        new GuardedRunnable(getReactApplicationContext()) {
-          @TargetApi(Build.VERSION_CODES.LOLLIPOP)
-          @Override
-          public void runGuarded() {
-            activity
-                .getWindow()
-                .addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS);
-            if (animated) {
-              int curColor = activity.getWindow().getStatusBarColor();
-              ValueAnimator colorAnimation =
-                  ValueAnimator.ofObject(new ArgbEvaluator(), curColor, color);
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
 
-              colorAnimation.addUpdateListener(
-                  new ValueAnimator.AnimatorUpdateListener() {
-                    @Override
-                    public void onAnimationUpdate(ValueAnimator animator) {
-                      activity.getWindow().setStatusBarColor((Integer) animator.getAnimatedValue());
-                    }
-                  });
-              colorAnimation.setDuration(300).setStartDelay(0);
-              colorAnimation.start();
-            } else {
-              activity.getWindow().setStatusBarColor(color);
+      UiThreadUtil.runOnUiThread(
+          new GuardedRunnable(getReactApplicationContext()) {
+            @TargetApi(Build.VERSION_CODES.LOLLIPOP)
+            @Override
+            public void runGuarded() {
+              activity
+                  .getWindow()
+                  .addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS);
+              if (animated) {
+                int curColor = activity.getWindow().getStatusBarColor();
+                ValueAnimator colorAnimation =
+                    ValueAnimator.ofObject(new ArgbEvaluator(), curColor, color);
+
+                colorAnimation.addUpdateListener(
+                    new ValueAnimator.AnimatorUpdateListener() {
+                      @Override
+                      public void onAnimationUpdate(ValueAnimator animator) {
+                        activity
+                            .getWindow()
+                            .setStatusBarColor((Integer) animator.getAnimatedValue());
+                      }
+                    });
+                colorAnimation.setDuration(300).setStartDelay(0);
+                colorAnimation.start();
+              } else {
+                activity.getWindow().setStatusBarColor(color);
+              }
             }
-          }
-        });
+          });
+    }
   }
 
-  @Override
+  @ReactMethod
   public void setTranslucent(final boolean translucent) {
     final Activity activity = getCurrentActivity();
     if (activity == null) {
@@ -120,37 +123,39 @@ public class StatusBarModule extends NativeStatusBarManagerAndroidSpec {
       return;
     }
 
-    UiThreadUtil.runOnUiThread(
-        new GuardedRunnable(getReactApplicationContext()) {
-          @TargetApi(Build.VERSION_CODES.LOLLIPOP)
-          @Override
-          public void runGuarded() {
-            // If the status bar is translucent hook into the window insets calculations
-            // and consume all the top insets so no padding will be added under the status bar.
-            View decorView = activity.getWindow().getDecorView();
-            if (translucent) {
-              decorView.setOnApplyWindowInsetsListener(
-                  new View.OnApplyWindowInsetsListener() {
-                    @Override
-                    public WindowInsets onApplyWindowInsets(View v, WindowInsets insets) {
-                      WindowInsets defaultInsets = v.onApplyWindowInsets(insets);
-                      return defaultInsets.replaceSystemWindowInsets(
-                          defaultInsets.getSystemWindowInsetLeft(),
-                          0,
-                          defaultInsets.getSystemWindowInsetRight(),
-                          defaultInsets.getSystemWindowInsetBottom());
-                    }
-                  });
-            } else {
-              decorView.setOnApplyWindowInsetsListener(null);
-            }
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+      UiThreadUtil.runOnUiThread(
+          new GuardedRunnable(getReactApplicationContext()) {
+            @TargetApi(Build.VERSION_CODES.LOLLIPOP)
+            @Override
+            public void runGuarded() {
+              // If the status bar is translucent hook into the window insets calculations
+              // and consume all the top insets so no padding will be added under the status bar.
+              View decorView = activity.getWindow().getDecorView();
+              if (translucent) {
+                decorView.setOnApplyWindowInsetsListener(
+                    new View.OnApplyWindowInsetsListener() {
+                      @Override
+                      public WindowInsets onApplyWindowInsets(View v, WindowInsets insets) {
+                        WindowInsets defaultInsets = v.onApplyWindowInsets(insets);
+                        return defaultInsets.replaceSystemWindowInsets(
+                            defaultInsets.getSystemWindowInsetLeft(),
+                            0,
+                            defaultInsets.getSystemWindowInsetRight(),
+                            defaultInsets.getSystemWindowInsetBottom());
+                      }
+                    });
+              } else {
+                decorView.setOnApplyWindowInsetsListener(null);
+              }
 
-            ViewCompat.requestApplyInsets(decorView);
-          }
-        });
+              ViewCompat.requestApplyInsets(decorView);
+            }
+          });
+    }
   }
 
-  @Override
+  @ReactMethod
   public void setHidden(final boolean hidden) {
     final Activity activity = getCurrentActivity();
     if (activity == null) {
@@ -174,7 +179,7 @@ public class StatusBarModule extends NativeStatusBarManagerAndroidSpec {
         });
   }
 
-  @Override
+  @ReactMethod
   public void setStyle(@Nullable final String style) {
     final Activity activity = getCurrentActivity();
     if (activity == null) {

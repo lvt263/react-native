@@ -7,6 +7,7 @@
  * @flow
  * @format
  */
+'use strict';
 
 const NativeModules = require('../BatchedBridge/NativeModules');
 const Platform = require('../Utilities/Platform');
@@ -30,79 +31,49 @@ function getConstants(): Object {
   return NativeUIManagerConstants;
 }
 
-function getViewManagerConfig(viewManagerName: string): any {
-  if (
-    viewManagerConfigs[viewManagerName] === undefined &&
-    NativeUIManager.getConstantsForViewManager
-  ) {
-    try {
-      viewManagerConfigs[
-        viewManagerName
-      ] = NativeUIManager.getConstantsForViewManager(viewManagerName);
-    } catch (e) {
-      console.error(
-        "NativeUIManager.getConstantsForViewManager('" +
-          viewManagerName +
-          "') threw an exception.",
-        e,
-      );
-      viewManagerConfigs[viewManagerName] = null;
-    }
-  }
-
-  const config = viewManagerConfigs[viewManagerName];
-  if (config) {
-    return config;
-  }
-
-  // If we're in the Chrome Debugger, let's not even try calling the sync
-  // method.
-  if (!global.nativeCallSyncHook) {
-    return config;
-  }
-
-  if (
-    NativeUIManager.lazilyLoadView &&
-    !triedLoadingConfig.has(viewManagerName)
-  ) {
-    const result = NativeUIManager.lazilyLoadView(viewManagerName);
-    triedLoadingConfig.add(viewManagerName);
-    if (result != null && result.viewConfig != null) {
-      getConstants()[viewManagerName] = result.viewConfig;
-      lazifyViewManagerConfig(viewManagerName);
-    }
-  }
-
-  return viewManagerConfigs[viewManagerName];
-}
-
-/* $FlowFixMe[cannot-spread-interface] (>=0.123.0 site=react_native_fb) This
- * comment suppresses an error found when Flow v0.123.0 was deployed. To see
- * the error, delete this comment and run Flow. */
 const UIManagerJS = {
   ...NativeUIManager,
-  createView(
-    reactTag: ?number,
-    viewName: string,
-    rootTag: number,
-    props: Object,
-  ): void {
-    if (Platform.OS === 'ios' && viewManagerConfigs[viewName] === undefined) {
-      // This is necessary to force the initialization of native viewManager
-      // classes in iOS when using static ViewConfigs
-      getViewManagerConfig(viewName);
-    }
-
-    NativeUIManager.createView(reactTag, viewName, rootTag, props);
-  },
   getConstants(): Object {
     return getConstants();
   },
-  getViewManagerConfig(viewManagerName: string): any {
-    return getViewManagerConfig(viewManagerName);
-  },
-  hasViewManagerConfig(viewManagerName: string): boolean {
-    return getViewManagerConfig(viewManagerName) != null;
+  getViewManagerConfig: function(viewManagerName: string): any {
+    if (
+      viewManagerConfigs[viewManagerName] === undefined &&
+      NativeUIManager.getConstantsForViewManager
+    ) {
+      try {
+        viewManagerConfigs[
+          viewManagerName
+        ] = NativeUIManager.getConstantsForViewManager(viewManagerName);
+      } catch (e) {
+        viewManagerConfigs[viewManagerName] = null;
+      }
+    }
+
+    const config = viewManagerConfigs[viewManagerName];
+    if (config) {
+      return config;
+    }
+
+    // If we're in the Chrome Debugger, let's not even try calling the sync
+    // method.
+    if (!global.nativeCallSyncHook) {
+      return config;
+    }
+
+    if (
+      NativeUIManager.lazilyLoadView &&
+      !triedLoadingConfig.has(viewManagerName)
+    ) {
+      const result = NativeUIManager.lazilyLoadView(viewManagerName);
+      triedLoadingConfig.add(viewManagerName);
+      if (result.viewConfig) {
+        getConstants()[viewManagerName] = result.viewConfig;
+        lazifyViewManagerConfig(viewManagerName);
+      }
+    }
+
+    return viewManagerConfigs[viewManagerName];
   },
 };
 
@@ -110,7 +81,7 @@ const UIManagerJS = {
 // 3rd party libs may be calling `NativeModules.UIManager.getViewManagerConfig()`
 // instead of `UIManager.getViewManagerConfig()` off UIManager.js.
 // This is a workaround for now.
-// $FlowFixMe[prop-missing]
+// $FlowFixMe
 NativeUIManager.getViewManagerConfig = UIManagerJS.getViewManagerConfig;
 
 function lazifyViewManagerConfig(viewName) {

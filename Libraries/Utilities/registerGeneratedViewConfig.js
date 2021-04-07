@@ -8,26 +8,62 @@
  * @format
  */
 
-import {createViewConfig} from '../NativeComponent/ViewConfig';
-import {type PartialViewConfig} from '../Renderer/shims/ReactNativeTypes';
-import ReactNativeViewConfigRegistry from '../Renderer/shims/ReactNativeViewConfigRegistry';
-import getNativeComponentAttributes from '../ReactNative/getNativeComponentAttributes';
+'use strict';
+
+const ReactNativeViewConfigRegistry = require('../Renderer/shims/ReactNativeViewConfigRegistry');
+const ReactNativeViewViewConfig = require('../Components/View/ReactNativeViewViewConfig');
 import verifyComponentAttributeEquivalence from './verifyComponentAttributeEquivalence';
+
+type GeneratedViewConfig = {
+  uiViewClassName: string,
+  bubblingEventTypes?: $ReadOnly<{
+    [eventName: string]: $ReadOnly<{|
+      phasedRegistrationNames: $ReadOnly<{|
+        captured: string,
+        bubbled: string,
+      |}>,
+    |}>,
+  }>,
+  directEventTypes?: $ReadOnly<{
+    [eventName: string]: $ReadOnly<{|
+      registrationName: string,
+    |}>,
+  }>,
+  validAttributes?: {
+    [propName: string]:
+      | true
+      | $ReadOnly<{|
+          diff?: <T>(arg1: any, arg2: any) => boolean,
+          process?: (arg1: any) => any,
+        |}>,
+  },
+};
 
 function registerGeneratedViewConfig(
   componentName: string,
-  partialViewConfig: PartialViewConfig,
+  viewConfig: GeneratedViewConfig,
 ) {
-  const staticViewConfig = createViewConfig(partialViewConfig);
+  const mergedViewConfig = {
+    uiViewClassName: componentName,
+    Commands: {},
+    bubblingEventTypes: {
+      ...ReactNativeViewViewConfig.bubblingEventTypes,
+      ...(viewConfig.bubblingEventTypes || {}),
+    },
+    directEventTypes: {
+      ...ReactNativeViewViewConfig.directEventTypes,
+      ...(viewConfig.directEventTypes || {}),
+    },
+    validAttributes: {
+      ...ReactNativeViewViewConfig.validAttributes,
+      ...(viewConfig.validAttributes || {}),
+    },
+  };
 
   ReactNativeViewConfigRegistry.register(componentName, () => {
-    if (!global.RN$Bridgeless) {
-      const nativeViewConfig = getNativeComponentAttributes(componentName);
+    verifyComponentAttributeEquivalence(componentName, mergedViewConfig);
 
-      verifyComponentAttributeEquivalence(nativeViewConfig, staticViewConfig);
-    }
-
-    return staticViewConfig;
+    return mergedViewConfig;
   });
 }
 

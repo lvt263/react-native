@@ -4,9 +4,11 @@
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  *
- * @flow strict
+ * @flow strict-local
  * @format
  */
+
+'use strict';
 
 import type {TurboModule} from '../TurboModule/RCTExport';
 import * as TurboModuleRegistry from '../TurboModule/TurboModuleRegistry';
@@ -29,7 +31,6 @@ export type ExceptionData = {
   isFatal: boolean,
   // flowlint-next-line unclear-type:off
   extraData?: Object,
-  ...
 };
 
 export interface Spec extends TurboModule {
@@ -45,6 +46,7 @@ export interface Spec extends TurboModule {
     stack: Array<StackFrame>,
     exceptionId: number,
   ) => void;
+  // TODO(T53311281): This is a noop on iOS now. Implement it.
   +reportException?: (data: ExceptionData) => void;
   +updateExceptionMessage: (
     message: string,
@@ -90,7 +92,8 @@ const ExceptionsManager = {
     }
   },
   reportException(data: ExceptionData): void {
-    if (NativeModule.reportException) {
+    if (Platform.OS !== 'ios' && NativeModule.reportException) {
+      // TODO(T53311281): This is a noop on iOS now. Implement it.
       NativeModule.reportException(data);
       return;
     }

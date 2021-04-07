@@ -1,21 +1,20 @@
-/*
+/**
  * Copyright (c) Facebook, Inc. and its affiliates.
  *
- * This source code is licensed under the MIT license found in the
- * LICENSE file in the root directory of this source tree.
+ * <p>This source code is licensed under the MIT license found in the LICENSE file in the root
+ * directory of this source tree.
  */
-
 package com.facebook.react.views.scroll;
 
-import android.content.Context;
+import android.animation.ObjectAnimator;
+import android.animation.PropertyValuesHolder;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.OverScroller;
 import com.facebook.react.bridge.JSApplicationIllegalArgumentException;
 import com.facebook.react.bridge.ReactContext;
-import com.facebook.react.uimanager.UIManagerHelper;
-import java.util.ArrayList;
-import java.util.List;
+import com.facebook.react.uimanager.UIManagerModule;
+import android.animation.ObjectAnimator;
+import android.animation.PropertyValuesHolder;
 
 /** Helper class that deals with emitting Scroll Events. */
 public class ReactScrollViewHelper {
@@ -24,22 +23,6 @@ public class ReactScrollViewHelper {
   public static final String OVER_SCROLL_ALWAYS = "always";
   public static final String AUTO = "auto";
   public static final String OVER_SCROLL_NEVER = "never";
-
-  public interface ScrollListener {
-    void onScroll(
-        ViewGroup scrollView, ScrollEventType scrollEventType, float xVelocity, float yVelocity);
-
-    void onLayout(ViewGroup scrollView);
-  }
-
-  // Support global native listeners for scroll events
-  private static List<ScrollListener> sScrollListeners = new ArrayList<>();
-
-  // If all else fails, this is the hardcoded value in OverScroller.java, in AOSP.
-  // The default is defined here (as of this diff):
-  // https://android.googlesource.com/platform/frameworks/base/+/ae5bcf23b5f0875e455790d6af387184dbd009c1/core/java/android/widget/OverScroller.java#44
-  private static int SMOOTH_SCROLL_DURATION = 250;
-  private static boolean mSmoothScrollDurationInitialized = false;
 
   /** Shared by {@link ReactScrollView} and {@link ReactHorizontalScrollView}. */
   public static void emitScrollEvent(ViewGroup scrollView, float xVelocity, float yVelocity) {
@@ -76,16 +59,12 @@ public class ReactScrollViewHelper {
       return;
     }
 
-    for (ScrollListener scrollListener : sScrollListeners) {
-      scrollListener.onScroll(scrollView, scrollEventType, xVelocity, yVelocity);
-    }
-
     ReactContext reactContext = (ReactContext) scrollView.getContext();
-    int surfaceId = UIManagerHelper.getSurfaceId(reactContext);
-    UIManagerHelper.getEventDispatcherForReactTag(reactContext, scrollView.getId())
+    reactContext
+        .getNativeModule(UIManagerModule.class)
+        .getEventDispatcher()
         .dispatchEvent(
             ScrollEvent.obtain(
-                surfaceId,
                 scrollView.getId(),
                 scrollEventType,
                 scrollView.getScrollX(),
@@ -96,13 +75,6 @@ public class ReactScrollViewHelper {
                 contentView.getHeight(),
                 scrollView.getWidth(),
                 scrollView.getHeight()));
-  }
-
-  /** This is only for Java listeners. onLayout events emitted to JS are handled elsewhere. */
-  public static void emitLayoutEvent(ViewGroup scrollView) {
-    for (ScrollListener scrollListener : sScrollListeners) {
-      scrollListener.onLayout(scrollView);
-    }
   }
 
   public static int parseOverScrollMode(String jsOverScrollMode) {
@@ -116,51 +88,17 @@ public class ReactScrollViewHelper {
       throw new JSApplicationIllegalArgumentException("wrong overScrollMode: " + jsOverScrollMode);
     }
   }
+  /**
+   * Helper method for animating to a ScrollView position with a given duration,
+   * instead of using "smoothScrollTo", which does not expose a duration argument.
+   */
+  public static ObjectAnimator animateScroll(final ViewGroup scrollView, int mDestX, int mDestY, int mDuration) {
+        PropertyValuesHolder scrollX = PropertyValuesHolder.ofInt("scrollX", mDestX);
+    PropertyValuesHolder scrollY = PropertyValuesHolder.ofInt("scrollY", mDestY);
 
-  public static int getDefaultScrollAnimationDuration(Context context) {
-    if (!mSmoothScrollDurationInitialized) {
-      mSmoothScrollDurationInitialized = true;
+    final ObjectAnimator animator = ObjectAnimator.ofPropertyValuesHolder(scrollView, scrollX, scrollY);
 
-      try {
-        OverScrollerDurationGetter overScrollerDurationGetter =
-            new OverScrollerDurationGetter(context);
-        SMOOTH_SCROLL_DURATION = overScrollerDurationGetter.getScrollAnimationDuration();
-      } catch (Throwable e) {
-      }
-    }
-
-    return SMOOTH_SCROLL_DURATION;
-  }
-
-  private static class OverScrollerDurationGetter extends OverScroller {
-    // This is the default in AOSP, hardcoded in OverScroller.java.
-    private int mScrollAnimationDuration = 250;
-
-    OverScrollerDurationGetter(Context context) {
-      // We call with a null context because OverScroller does not use the context
-      // in the execution path we're interested in, unless heavily modified in an AOSP fork.
-      super(context);
-    }
-
-    public int getScrollAnimationDuration() {
-      // If startScroll is called without a duration, OverScroller will call `startScroll(x, y, dx,
-      // dy, duration)` with the default duration.
-      super.startScroll(0, 0, 0, 0);
-
-      return mScrollAnimationDuration;
-    }
-
-    @Override
-    public void startScroll(int startX, int startY, int dx, int dy, int duration) {
-      mScrollAnimationDuration = duration;
-    }
-  }
-
-  public static void addScrollListener(ScrollListener listener) {
-    sScrollListeners.add(listener);
-  }
-
-  public static void removeScrollListener(ScrollListener listener) {
-    sScrollListeners.remove(listener);
+    animator.setDuration(mDuration).start();
+    return animator;
   }
 }

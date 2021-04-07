@@ -1,18 +1,16 @@
-/*
- * Copyright (c) Facebook, Inc. and its affiliates.
+/**
+ * Copyright (c) 2014-present, Facebook, Inc.
  *
- * This source code is licensed under the MIT license found in the
- * LICENSE file in the root directory of this source tree.
+ * <p>This source code is licensed under the MIT license found in the LICENSE file in the root
+ * directory of this source tree.
  */
-
 package com.facebook.react.fabric;
 
 import android.annotation.SuppressLint;
-import androidx.annotation.NonNull;
 import com.facebook.jni.HybridData;
 import com.facebook.proguard.annotations.DoNotStrip;
+import com.facebook.react.bridge.JavaScriptContextHolder;
 import com.facebook.react.bridge.NativeMap;
-import com.facebook.react.bridge.RuntimeExecutor;
 import com.facebook.react.bridge.queue.MessageQueueThread;
 import com.facebook.react.fabric.events.EventBeatManager;
 import com.facebook.react.uimanager.PixelUtil;
@@ -34,15 +32,14 @@ public class Binding {
   }
 
   private native void installFabricUIManager(
-      RuntimeExecutor runtimeExecutor,
+      long jsContextNativePointer,
       Object uiManager,
       EventBeatManager eventBeatManager,
       MessageQueueThread jsMessageQueueThread,
-      ComponentFactory componentsRegistry,
+      ComponentFactoryDelegate componentsRegistry,
       Object reactNativeConfig);
 
-  public native void startSurface(
-      int surfaceId, @NonNull String moduleName, @NonNull NativeMap initialProps);
+  public native void startSurface(int surfaceId, String moduleName, NativeMap initialProps);
 
   public native void startSurfaceWithConstraints(
       int surfaceId,
@@ -51,11 +48,7 @@ public class Binding {
       float minWidth,
       float maxWidth,
       float minHeight,
-      float maxHeight,
-      float offsetX,
-      float offsetY,
-      boolean isRTL,
-      boolean doLeftAndRightSwapInRTL);
+      float maxHeight);
 
   public native void renderTemplateToSurface(int surfaceId, String uiTemplate);
 
@@ -64,34 +57,23 @@ public class Binding {
   public native void setPixelDensity(float pointScaleFactor);
 
   public native void setConstraints(
-      int surfaceId,
-      float minWidth,
-      float maxWidth,
-      float minHeight,
-      float maxHeight,
-      float offsetX,
-      float offsetY,
-      boolean isRTL,
-      boolean doLeftAndRightSwapInRTL);
-
-  public native void driveCxxAnimations();
+      int surfaceId, float minWidth, float maxWidth, float minHeight, float maxHeight);
 
   public void register(
-      @NonNull RuntimeExecutor runtimeExecutor,
-      @NonNull FabricUIManager fabricUIManager,
-      @NonNull EventBeatManager eventBeatManager,
-      @NonNull MessageQueueThread jsMessageQueueThread,
-      @NonNull ComponentFactory componentFactory,
-      @NonNull ReactNativeConfig reactNativeConfig) {
+      JavaScriptContextHolder jsContext,
+      FabricUIManager fabricUIManager,
+      EventBeatManager eventBeatManager,
+      MessageQueueThread jsMessageQueueThread,
+      ComponentFactoryDelegate componentFactoryDelegate,
+      ReactNativeConfig reactNativeConfig) {
     fabricUIManager.setBinding(this);
     installFabricUIManager(
-        runtimeExecutor,
+        jsContext.get(),
         fabricUIManager,
         eventBeatManager,
         jsMessageQueueThread,
-        componentFactory,
+        componentFactoryDelegate,
         reactNativeConfig);
-
     setPixelDensity(PixelUtil.getDisplayMetricDensity());
   }
 
@@ -100,8 +82,4 @@ public class Binding {
   public void unregister() {
     uninstallFabricUIManager();
   }
-
-  public native void registerSurface(SurfaceHandlerBinding surfaceHandler);
-
-  public native void unregisterSurface(SurfaceHandlerBinding surfaceHandler);
 }

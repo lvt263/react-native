@@ -1,4 +1,4 @@
-/*
+/**
  * Copyright (c) Facebook, Inc. and its affiliates.
  *
  * This source code is licensed under the MIT license found in the
@@ -17,9 +17,8 @@
 
 using namespace facebook::react;
 
-static NSString *interfaceIdiom(UIUserInterfaceIdiom idiom)
-{
-  switch (idiom) {
+static NSString *interfaceIdiom(UIUserInterfaceIdiom idiom) {
+  switch(idiom) {
     case UIUserInterfaceIdiomPhone:
       return @"phone";
     case UIUserInterfaceIdiomPad:
@@ -58,37 +57,30 @@ RCT_EXPORT_MODULE(PlatformConstants)
 
 - (ModuleConstants<JS::NativePlatformConstantsIOS::Constants>)getConstants
 {
-  __block ModuleConstants<JS::NativePlatformConstantsIOS::Constants> constants;
-  RCTUnsafeExecuteOnMainQueueSync(^{
-    UIDevice *device = [UIDevice currentDevice];
-    auto versions = RCTGetReactNativeVersion();
-    constants = typedConstants<JS::NativePlatformConstantsIOS::Constants>({
-        .forceTouchAvailable = RCTForceTouchAvailable() ? true : false,
-        .osVersion = [device systemVersion],
-        .systemName = [device systemName],
-        .interfaceIdiom = interfaceIdiom([device userInterfaceIdiom]),
-        .isTesting = RCTRunningInTestEnvironment() ? true : false,
-        .reactNativeVersion = JS::NativePlatformConstantsIOS::ConstantsReactNativeVersion::Builder(
-            {.minor = [versions[@"minor"] doubleValue],
-             .major = [versions[@"major"] doubleValue],
-             .patch = [versions[@"patch"] doubleValue],
-             .prerelease = [versions[@"prerelease"] isKindOfClass:[NSNull class]]
-                 ? folly::Optional<double>{}
-                 : [versions[@"prerelease"] doubleValue]}),
-    });
+  UIDevice *device = [UIDevice currentDevice];
+  auto versions = RCTGetReactNativeVersion();
+  return typedConstants<JS::NativePlatformConstantsIOS::Constants>({
+    .forceTouchAvailable = RCTForceTouchAvailable() ? true : false,
+    .osVersion = [device systemVersion],
+    .systemName = [device systemName],
+    .interfaceIdiom = interfaceIdiom([device userInterfaceIdiom]),
+    .isTesting = RCTRunningInTestEnvironment() ? true : false,
+    .reactNativeVersion = JS::NativePlatformConstantsIOS::ConstantsReactNativeVersion::Builder({
+      .minor = [versions[@"minor"] doubleValue],
+      .major = [versions[@"major"] doubleValue],
+      .patch = [versions[@"patch"] doubleValue],
+      .prerelease = [versions[@"prerelease"] isKindOfClass: [NSNull class]] ? folly::Optional<double>{} : [versions[@"prerelease"] doubleValue]
+    }),
   });
-
-  return constants;
 }
 
-- (std::shared_ptr<TurboModule>)getTurboModule:(const ObjCTurboModule::InitParams &)params
+- (std::shared_ptr<TurboModule>)getTurboModuleWithJsInvoker:(std::shared_ptr<JSCallInvoker>)jsInvoker
 {
-  return std::make_shared<NativePlatformConstantsIOSSpecJSI>(params);
+  return std::make_shared<NativePlatformConstantsIOSSpecJSI>(self, jsInvoker);
 }
 
 @end
 
-Class RCTPlatformCls(void)
-{
+Class RCTPlatformCls(void) {
   return RCTPlatform.class;
 }

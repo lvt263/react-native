@@ -1,10 +1,3 @@
-/*
- * Copyright (c) Facebook, Inc. and its affiliates.
- *
- * This source code is licensed under the MIT license found in the
- * LICENSE file in the root directory of this source tree.
- */
-
 #include "InspectorState.h"
 
 #include <glog/logging.h>
@@ -49,10 +42,6 @@ std::pair<NextStatePtr, CommandPtr> InspectorState::RunningDetached::didPause(
 
   return std::make_pair<NextStatePtr, CommandPtr>(
       nullptr, makeContinueCommand());
-}
-
-void InspectorState::RunningDetached::onEnter(InspectorState *previous) {
-  inspector_.awaitingDebuggerOnStart_ = false;
 }
 
 std::pair<NextStatePtr, bool> InspectorState::RunningDetached::enable() {
@@ -176,8 +165,6 @@ void InspectorState::Running::onEnter(InspectorState *prevState) {
       inspector_.notifyScriptsLoaded();
     }
   }
-
-  inspector_.awaitingDebuggerOnStart_ = false;
 }
 
 void InspectorState::Running::detach(
@@ -242,10 +229,6 @@ std::pair<NextStatePtr, CommandPtr> InspectorState::Running::didPause(
   } else if (reason == debugger::PauseReason::ScriptLoaded) {
     inspector_.addCurrentScriptToLoadedScripts();
     inspector_.notifyScriptsLoaded();
-    if (inspector_.shouldPauseOnThisScriptLoad()) {
-      return std::make_pair<NextStatePtr, CommandPtr>(
-          InspectorState::Paused::make(inspector_), nullptr);
-    }
   } else if (reason == debugger::PauseReason::EvalComplete) {
     assert(pendingEvalPromise_);
 
@@ -254,12 +237,6 @@ std::pair<NextStatePtr, CommandPtr> InspectorState::Running::didPause(
     pendingEvalPromise_->setValue(
         inspector_.debugger_.getProgramState().getEvalResult());
     pendingEvalPromise_.reset();
-  } else if (
-      reason == debugger::PauseReason::Breakpoint &&
-      !inspector_.breakpointsActive_) {
-    // We hit a user defined breakpoint, but breakpoints have been deactivated.
-    return std::make_pair<NextStatePtr, CommandPtr>(
-        nullptr, makeContinueCommand());
   } else /* other cases imply a transition to Pause */ {
     return std::make_pair<NextStatePtr, CommandPtr>(
         InspectorState::Paused::make(inspector_), nullptr);
@@ -299,10 +276,9 @@ void InspectorState::Running::pushPendingEval(
     std::shared_ptr<folly::Promise<debugger::EvalResult>> promise,
     folly::Function<void(const facebook::hermes::debugger::EvalResult &)>
         resultTransformer) {
-  PendingEval pendingEval{
-      debugger::Command::eval(src, frameIndex),
-      promise,
-      std::move(resultTransformer)};
+  PendingEval pendingEval{debugger::Command::eval(src, frameIndex),
+                          promise,
+                          std::move(resultTransformer)};
 
   pendingEvals_.emplace(std::move(pendingEval));
 
@@ -320,15 +296,14 @@ bool InspectorState::Running::pause() {
   switch (pendingPauseState) {
     case AsyncPauseState::None:
       // haven't yet requested a pause, so do it now
-      pendingPauseState = AsyncPauseState::Explicit;
       inspector_.triggerAsyncPause(false);
+      pendingPauseState = AsyncPauseState::Explicit;
       canPause = true;
       break;
     case AsyncPauseState::Implicit:
       // already requested an implicit pause on our own, upgrade it to an
       // explicit pause
       pendingPauseState = AsyncPauseState::Explicit;
-      inspector_.triggerAsyncPause(false);
       canPause = true;
       break;
     case AsyncPauseState::Explicit:
@@ -352,7 +327,6 @@ void InspectorState::Paused::onEnter(InspectorState *prevState) {
   }
 
   const debugger::ProgramState &state = inspector_.debugger_.getProgramState();
-  inspector_.alertIfPausedInSupersededFile();
   inspector_.observer_.onPause(inspector_, state);
 }
 
@@ -477,10 +451,9 @@ void InspectorState::Paused::pushPendingEval(
     return;
   }
 
-  PendingEval pendingEval{
-      debugger::Command::eval(src, frameIndex),
-      promise,
-      std::move(resultTransformer)};
+  PendingEval pendingEval{debugger::Command::eval(src, frameIndex),
+                          promise,
+                          std::move(resultTransformer)};
   pendingEvals_.emplace(std::move(pendingEval));
   hasPendingWork_.notify_one();
 }

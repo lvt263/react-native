@@ -1,21 +1,19 @@
-/*
+/**
  * Copyright (c) Facebook, Inc. and its affiliates.
  *
- * This source code is licensed under the MIT license found in the
- * LICENSE file in the root directory of this source tree.
+ * <p>This source code is licensed under the MIT license found in the LICENSE file in the root
+ * directory of this source tree.
  */
-
 package com.facebook.react.bridge;
 
-import static com.facebook.infer.annotation.ThreadConfined.UI;
 import static com.facebook.systrace.Systrace.TRACE_TAG_REACT_JAVA_BRIDGE;
 
 import android.content.res.AssetManager;
 import android.os.AsyncTask;
+import android.util.Log;
 import androidx.annotation.Nullable;
 import com.facebook.common.logging.FLog;
 import com.facebook.infer.annotation.Assertions;
-import com.facebook.infer.annotation.ThreadConfined;
 import com.facebook.jni.HybridData;
 import com.facebook.proguard.annotations.DoNotStrip;
 import com.facebook.react.bridge.queue.MessageQueueThread;
@@ -27,7 +25,7 @@ import com.facebook.react.common.ReactConstants;
 import com.facebook.react.common.annotations.VisibleForTesting;
 import com.facebook.react.config.ReactFeatureFlags;
 import com.facebook.react.module.annotations.ReactModule;
-import com.facebook.react.turbomodule.core.CallInvokerHolderImpl;
+import com.facebook.react.turbomodule.core.JSCallInvokerHolderImpl;
 import com.facebook.react.turbomodule.core.interfaces.TurboModule;
 import com.facebook.react.turbomodule.core.interfaces.TurboModuleRegistry;
 import com.facebook.systrace.Systrace;
@@ -102,17 +100,14 @@ public class CatalystInstanceImpl implements CatalystInstance {
   private @Nullable String mSourceURL;
 
   private JavaScriptContextHolder mJavaScriptContextHolder;
-  private volatile @Nullable TurboModuleRegistry mTurboModuleRegistry = null;
-  private @Nullable JSIModule mTurboModuleManagerJSIModule = null;
+  private @Nullable TurboModuleRegistry mTurboModuleRegistry = null;
 
   // C++ parts
   private final HybridData mHybridData;
 
   private static native HybridData initHybrid();
 
-  public native CallInvokerHolderImpl getJSCallInvokerHolder();
-
-  public native CallInvokerHolderImpl getNativeCallInvokerHolder();
+  public native JSCallInvokerHolderImpl getJSCallInvokerHolder();
 
   private CatalystInstanceImpl(
       final ReactQueueConfigurationSpec reactQueueConfigurationSpec,
@@ -120,7 +115,7 @@ public class CatalystInstanceImpl implements CatalystInstance {
       final NativeModuleRegistry nativeModuleRegistry,
       final JSBundleLoader jsBundleLoader,
       NativeModuleCallExceptionHandler nativeModuleCallExceptionHandler) {
-    FLog.d(ReactConstants.TAG, "Initializing React Xplat Bridge.");
+    Log.d(ReactConstants.TAG, "Initializing React Xplat Bridge.");
     Systrace.beginSection(TRACE_TAG_REACT_JAVA_BRIDGE, "createCatalystInstanceImpl");
 
     mHybridData = initHybrid();
@@ -137,7 +132,7 @@ public class CatalystInstanceImpl implements CatalystInstance {
     mTraceListener = new JSProfilerTraceListener(this);
     Systrace.endSection(TRACE_TAG_REACT_JAVA_BRIDGE);
 
-    FLog.d(ReactConstants.TAG, "Initializing React Xplat Bridge before initializeBridge");
+    Log.d(ReactConstants.TAG, "Initializing React Xplat Bridge before initializeBridge");
     Systrace.beginSection(TRACE_TAG_REACT_JAVA_BRIDGE, "initializeCxxBridge");
     initializeBridge(
         new BridgeCallback(this),
@@ -146,7 +141,7 @@ public class CatalystInstanceImpl implements CatalystInstance {
         mNativeModulesQueueThread,
         mNativeModuleRegistry.getJavaModules(this),
         mNativeModuleRegistry.getCxxModules());
-    FLog.d(ReactConstants.TAG, "Initializing React Xplat Bridge after initializeBridge");
+    Log.d(ReactConstants.TAG, "Initializing React Xplat Bridge after initializeBridge");
     Systrace.endSection(TRACE_TAG_REACT_JAVA_BRIDGE);
 
     mJavaScriptContextHolder = new JavaScriptContextHolder(getJavaScriptContext());
@@ -239,8 +234,10 @@ public class CatalystInstanceImpl implements CatalystInstance {
   }
 
   @Override
-  public void loadSplitBundleFromFile(String fileName, String sourceURL) {
-    jniLoadScriptFromFile(fileName, sourceURL, false);
+  public void loadScriptFromDeltaBundle(
+      String sourceURL, NativeDeltaClient deltaClient, boolean loadSynchronously) {
+    mSourceURL = sourceURL;
+    jniLoadScriptFromDeltaBundle(sourceURL, deltaClient, loadSynchronously);
   }
 
   private native void jniSetSourceURL(String sourceURL);
@@ -253,9 +250,12 @@ public class CatalystInstanceImpl implements CatalystInstance {
   private native void jniLoadScriptFromFile(
       String fileName, String sourceURL, boolean loadSynchronously);
 
+  private native void jniLoadScriptFromDeltaBundle(
+      String sourceURL, NativeDeltaClient deltaClient, boolean loadSynchronously);
+
   @Override
   public void runJSBundle() {
-    FLog.d(ReactConstants.TAG, "CatalystInstanceImpl.runJSBundle()");
+    Log.d(ReactConstants.TAG, "CatalystInstanceImpl.runJSBundle()");
     Assertions.assertCondition(!mJSBundleHasLoaded, "JS bundle was already loaded!");
     // incrementPendingJSCalls();
     mJSBundleLoader.loadScript(CatalystInstanceImpl.this);
@@ -333,10 +333,10 @@ public class CatalystInstanceImpl implements CatalystInstance {
    * fully shut down other threads.
    */
   @Override
-  @ThreadConfined(UI)
   public void destroy() {
-    FLog.d(ReactConstants.TAG, "CatalystInstanceImpl.destroy() start");
+    Log.d(ReactConstants.TAG, "CatalystInstanceImpl.destroy() start");
     UiThreadUtil.assertOnUiThread();
+
     if (mDestroyed) {
       return;
     }
@@ -361,6 +361,11 @@ public class CatalystInstanceImpl implements CatalystInstance {
               }
             }
 
+            final JSIModule turboModuleManager =
+                ReactFeatureFlags.useTurboModules
+                    ? mJSIModuleRegistry.getModule(JSIModuleType.TurboModuleManager)
+                    : null;
+
             getReactQueueConfiguration()
                 .getJSQueueThread()
                 .runOnQueue(
@@ -368,8 +373,8 @@ public class CatalystInstanceImpl implements CatalystInstance {
                       @Override
                       public void run() {
                         // We need to destroy the TurboModuleManager on the JS Thread
-                        if (mTurboModuleManagerJSIModule != null) {
-                          mTurboModuleManagerJSIModule.onCatalystInstanceDestroy();
+                        if (turboModuleManager != null) {
+                          turboModuleManager.onCatalystInstanceDestroy();
                         }
 
                         getReactQueueConfiguration()
@@ -394,7 +399,7 @@ public class CatalystInstanceImpl implements CatalystInstance {
 
                                             mHybridData.resetNative();
                                             getReactQueueConfiguration().destroy();
-                                            FLog.d(
+                                            Log.d(
                                                 ReactConstants.TAG,
                                                 "CatalystInstanceImpl.destroy() end");
                                             ReactMarker.logMarker(
@@ -421,7 +426,7 @@ public class CatalystInstanceImpl implements CatalystInstance {
   @VisibleForTesting
   @Override
   public void initialize() {
-    FLog.d(ReactConstants.TAG, "CatalystInstanceImpl.initialize()");
+    Log.d(ReactConstants.TAG, "CatalystInstanceImpl.initialize()");
     Assertions.assertCondition(
         !mInitialized, "This catalyst instance has already been initialized");
     // We assume that the instance manager blocks on running the JS bundle. If
@@ -451,40 +456,27 @@ public class CatalystInstanceImpl implements CatalystInstance {
   @Override
   public <T extends NativeModule> boolean hasNativeModule(Class<T> nativeModuleInterface) {
     String moduleName = getNameFromAnnotation(nativeModuleInterface);
-    return getTurboModuleRegistry() != null && getTurboModuleRegistry().hasModule(moduleName)
+    return mTurboModuleRegistry != null && mTurboModuleRegistry.hasModule(moduleName)
         ? true
         : mNativeModuleRegistry.hasModule(moduleName);
   }
 
   @Override
-  @Nullable
   public <T extends NativeModule> T getNativeModule(Class<T> nativeModuleInterface) {
     return (T) getNativeModule(getNameFromAnnotation(nativeModuleInterface));
   }
 
-  private TurboModuleRegistry getTurboModuleRegistry() {
-    if (ReactFeatureFlags.useTurboModules) {
-      return Assertions.assertNotNull(
-          mTurboModuleRegistry,
-          "TurboModules are enabled, but mTurboModuleRegistry hasn't been set.");
-    }
-
-    return null;
-  }
-
   @Override
-  @Nullable
   public NativeModule getNativeModule(String moduleName) {
-    if (getTurboModuleRegistry() != null) {
-      TurboModule turboModule = getTurboModuleRegistry().getModule(moduleName);
+    if (mTurboModuleRegistry != null) {
+      TurboModule turboModule = mTurboModuleRegistry.getModule(moduleName);
+
       if (turboModule != null) {
         return (NativeModule) turboModule;
       }
     }
 
-    return mNativeModuleRegistry.hasModule(moduleName)
-        ? mNativeModuleRegistry.getModule(moduleName)
-        : null;
+    return mNativeModuleRegistry.getModule(moduleName);
   }
 
   private <T extends NativeModule> String getNameFromAnnotation(Class<T> nativeModuleInterface) {
@@ -502,8 +494,8 @@ public class CatalystInstanceImpl implements CatalystInstance {
     Collection<NativeModule> nativeModules = new ArrayList<>();
     nativeModules.addAll(mNativeModuleRegistry.getAllModules());
 
-    if (getTurboModuleRegistry() != null) {
-      for (TurboModule turboModule : getTurboModuleRegistry().getModules()) {
+    if (mTurboModuleRegistry != null) {
+      for (TurboModule turboModule : mTurboModuleRegistry.getModules()) {
         nativeModules.add((NativeModule) turboModule);
       }
     }
@@ -550,9 +542,6 @@ public class CatalystInstanceImpl implements CatalystInstance {
   }
 
   @Override
-  public native RuntimeExecutor getRuntimeExecutor();
-
-  @Override
   public void addJSIModules(List<JSIModuleSpec> jsiModules) {
     mJSIModuleRegistry.registerModules(jsiModules);
   }
@@ -582,9 +571,8 @@ public class CatalystInstanceImpl implements CatalystInstance {
     }
   }
 
-  public void setTurboModuleManager(JSIModule module) {
-    mTurboModuleRegistry = (TurboModuleRegistry) module;
-    mTurboModuleManagerJSIModule = module;
+  public void setTurboModuleManager(JSIModule getter) {
+    mTurboModuleRegistry = (TurboModuleRegistry) getter;
   }
 
   private void decrementPendingJSCalls() {

@@ -7,26 +7,19 @@
  * @flow
  * @format
  */
-
 'use strict';
 
-import invariant from 'invariant';
+const invariant = require('invariant');
 
 /**
  * Used to find the indices of the frames that overlap the given offsets. Useful for finding the
  * items that bound different windows of content, such as the visible area or the buffered overscan
  * area.
  */
-export function elementsThatOverlapOffsets(
+function elementsThatOverlapOffsets(
   offsets: Array<number>,
   itemCount: number,
-  getFrameMetrics: (
-    index: number,
-  ) => {
-    length: number,
-    offset: number,
-    ...
-  },
+  getFrameMetrics: (index: number) => {length: number, offset: number},
 ): Array<number> {
   const out = [];
   let outLength = 0;
@@ -57,17 +50,9 @@ export function elementsThatOverlapOffsets(
  * can restrict the number of new items render at once so that content can appear on the screen
  * faster.
  */
-export function newRangeCount(
-  prev: {
-    first: number,
-    last: number,
-    ...
-  },
-  next: {
-    first: number,
-    last: number,
-    ...
-  },
+function newRangeCount(
+  prev: {first: number, last: number},
+  next: {first: number, last: number},
 ): number {
   return (
     next.last -
@@ -86,35 +71,23 @@ export function newRangeCount(
  * prioritizes the visible area first, then expands that with overscan regions ahead and behind,
  * biased in the direction of scroll.
  */
-export function computeWindowedRenderLimits(
-  data: any,
-  getItemCount: (data: any) => number,
-  maxToRenderPerBatch: number,
-  windowSize: number,
-  prev: {
-    first: number,
-    last: number,
-    ...
+function computeWindowedRenderLimits(
+  props: {
+    data: any,
+    getItemCount: (data: any) => number,
+    maxToRenderPerBatch: number,
+    windowSize: number,
   },
-  getFrameMetricsApprox: (
-    index: number,
-  ) => {
-    length: number,
-    offset: number,
-    ...
-  },
+  prev: {first: number, last: number},
+  getFrameMetricsApprox: (index: number) => {length: number, offset: number},
   scrollMetrics: {
     dt: number,
     offset: number,
     velocity: number,
     visibleLength: number,
-    ...
   },
-): {
-  first: number,
-  last: number,
-  ...
-} {
+): {first: number, last: number} {
+  const {data, getItemCount, maxToRenderPerBatch, windowSize} = props;
   const itemCount = getItemCount(data);
   if (itemCount === 0) {
     return prev;
@@ -152,7 +125,7 @@ export function computeWindowedRenderLimits(
   // Find the indices that correspond to the items at the render boundaries we're targeting.
   let [overscanFirst, first, last, overscanLast] = elementsThatOverlapOffsets(
     [overscanBegin, visibleBegin, visibleEnd, overscanEnd],
-    itemCount,
+    props.getItemCount(props.data),
     getFrameMetricsApprox,
   );
   overscanFirst = overscanFirst == null ? 0 : overscanFirst;
@@ -234,12 +207,10 @@ export function computeWindowedRenderLimits(
   return {first, last};
 }
 
-export function keyExtractor(item: any, index: number): string {
-  if (typeof item === 'object' && item?.key != null) {
-    return item.key;
-  }
-  if (typeof item === 'object' && item?.id != null) {
-    return item.id;
-  }
-  return String(index);
-}
+const VirtualizeUtils = {
+  computeWindowedRenderLimits,
+  elementsThatOverlapOffsets,
+  newRangeCount,
+};
+
+module.exports = VirtualizeUtils;

@@ -7,7 +7,6 @@
  * @flow
  * @format
  */
-
 'use strict';
 
 export type ResolvedAssetSource = {|
@@ -18,27 +17,21 @@ export type ResolvedAssetSource = {|
   +scale: number,
 |};
 
-import type {PackagerAsset} from '@react-native/assets/registry';
+import type {PackagerAsset} from './AssetRegistry';
 
 const PixelRatio = require('../Utilities/PixelRatio');
-const {pickScale} = require('./AssetUtils');
 const Platform = require('../Utilities/Platform');
 
+const assetPathUtils = require('./assetPathUtils');
 const invariant = require('invariant');
-
-const {
-  getAndroidResourceFolderName,
-  getAndroidResourceIdentifier,
-  getBasePath,
-} = require('@react-native/assets/path-support');
 
 /**
  * Returns a path like 'assets/AwesomeModule/icon@2x.png'
  */
 function getScaledAssetPath(asset): string {
-  const scale = pickScale(asset.scales, PixelRatio.get());
+  const scale = AssetSourceResolver.pickScale(asset.scales, PixelRatio.get());
   const scaleSuffix = scale === 1 ? '' : '@' + scale + 'x';
-  const assetDir = getBasePath(asset);
+  const assetDir = assetPathUtils.getBasePath(asset);
   return assetDir + '/' + asset.name + scaleSuffix + '.' + asset.type;
 }
 
@@ -46,9 +39,12 @@ function getScaledAssetPath(asset): string {
  * Returns a path like 'drawable-mdpi/icon.png'
  */
 function getAssetPathInDrawableFolder(asset): string {
-  const scale = pickScale(asset.scales, PixelRatio.get());
-  const drawbleFolder = getAndroidResourceFolderName(asset, scale);
-  const fileName = getAndroidResourceIdentifier(asset);
+  const scale = AssetSourceResolver.pickScale(asset.scales, PixelRatio.get());
+  const drawbleFolder = assetPathUtils.getAndroidResourceFolderName(
+    asset,
+    scale,
+  );
+  const fileName = assetPathUtils.getAndroidResourceIdentifier(asset);
   return drawbleFolder + '/' + fileName + '.' + asset.type;
 }
 
@@ -117,12 +113,7 @@ class AssetSourceResolver {
    */
   scaledAssetURLNearBundle(): ResolvedAssetSource {
     const path = this.jsbundleUrl || 'file://';
-    return this.fromSource(
-      // Assets can have relative paths outside of the project root.
-      // When bundling them we replace `../` with `_` to make sure they
-      // don't end up outside of the expected assets directory.
-      path + getScaledAssetPath(this.asset).replace(/\.\.\//g, '_'),
-    );
+    return this.fromSource(path + getScaledAssetPath(this.asset));
   }
 
   /**
@@ -136,7 +127,9 @@ class AssetSourceResolver {
       Platform.OS === 'android',
       'resource identifiers work on Android',
     );
-    return this.fromSource(getAndroidResourceIdentifier(this.asset));
+    return this.fromSource(
+      assetPathUtils.getAndroidResourceIdentifier(this.asset),
+    );
   }
 
   /**
@@ -155,14 +148,23 @@ class AssetSourceResolver {
       width: this.asset.width,
       height: this.asset.height,
       uri: source,
-      scale: pickScale(this.asset.scales, PixelRatio.get()),
+      scale: AssetSourceResolver.pickScale(this.asset.scales, PixelRatio.get()),
     };
   }
 
-  static pickScale: (
-    scales: Array<number>,
-    deviceScale?: number,
-  ) => number = pickScale;
+  static pickScale(scales: Array<number>, deviceScale: number): number {
+    // Packager guarantees that `scales` array is sorted
+    for (let i = 0; i < scales.length; i++) {
+      if (scales[i] >= deviceScale) {
+        return scales[i];
+      }
+    }
+
+    // If nothing matches, device scale is larger than any available
+    // scales, so we return the biggest one. Unless the array is empty,
+    // in which case we default to 1
+    return scales[scales.length - 1] || 1;
+  }
 }
 
 module.exports = AssetSourceResolver;

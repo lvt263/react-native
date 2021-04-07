@@ -1,22 +1,18 @@
-/*
+/**
  * Copyright (c) Facebook, Inc. and its affiliates.
  *
- * This source code is licensed under the MIT license found in the
- * LICENSE file in the root directory of this source tree.
+ * <p>This source code is licensed under the MIT license found in the LICENSE file in the root
+ * directory of this source tree.
  */
-
 package com.facebook.react.devsupport;
 
-import android.view.View;
 import androidx.annotation.Nullable;
 import com.facebook.react.bridge.DefaultNativeModuleCallExceptionHandler;
 import com.facebook.react.bridge.ReactContext;
 import com.facebook.react.bridge.ReadableArray;
 import com.facebook.react.devsupport.interfaces.DevOptionHandler;
-import com.facebook.react.devsupport.interfaces.DevSplitBundleCallback;
 import com.facebook.react.devsupport.interfaces.DevSupportManager;
 import com.facebook.react.devsupport.interfaces.ErrorCustomizer;
-import com.facebook.react.devsupport.interfaces.ErrorType;
 import com.facebook.react.devsupport.interfaces.PackagerStatusCallback;
 import com.facebook.react.devsupport.interfaces.StackFrame;
 import com.facebook.react.modules.debug.interfaces.DeveloperSettings;
@@ -44,14 +40,6 @@ public class DisabledDevSupportManager implements DevSupportManager {
   public void showNewJSError(String message, ReadableArray details, int errorCookie) {}
 
   @Override
-  public @Nullable View createRootView(String appKey) {
-    return null;
-  }
-
-  @Override
-  public void destroyRootView(View rootView) {}
-
-  @Override
   public void updateJSError(String message, ReadableArray details, int errorCookie) {}
 
   @Override
@@ -74,6 +62,9 @@ public class DisabledDevSupportManager implements DevSupportManager {
 
   @Override
   public void setRemoteJSDebugEnabled(boolean isRemoteJSDebugEnabled) {}
+
+  @Override
+  public void setReloadOnJSChangeEnabled(boolean isReloadOnJSChangeEnabled) {}
 
   @Override
   public void setFpsDebugEnabled(boolean isFpsDebugEnabled) {}
@@ -132,12 +123,7 @@ public class DisabledDevSupportManager implements DevSupportManager {
   public void reloadJSFromServer(String bundleURL) {}
 
   @Override
-  public void loadSplitBundleFromServer(String bundlePath, DevSplitBundleCallback callback) {}
-
-  @Override
-  public void isPackagerRunning(final PackagerStatusCallback callback) {
-    callback.onPackagerStatusFetched(false);
-  }
+  public void isPackagerRunning(PackagerStatusCallback callback) {}
 
   @Override
   public @Nullable File downloadBundleResourceFromUrlSync(
@@ -156,16 +142,7 @@ public class DisabledDevSupportManager implements DevSupportManager {
   }
 
   @Override
-  public @Nullable ErrorType getLastErrorType() {
-    return null;
-  }
-
-  @Override
   public void registerErrorCustomizer(ErrorCustomizer errorCustomizer) {}
-
-  @Override
-  public void setPackagerLocationCustomizer(
-      DevSupportManager.PackagerLocationCustomizer packagerLocationCustomizer) {}
 
   @Override
   public void handleException(Exception e) {

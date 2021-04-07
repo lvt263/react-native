@@ -4,7 +4,7 @@
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  *
- * @flow strict-local
+ * @flow
  * @format
  */
 
@@ -17,12 +17,6 @@ const ReactNativeViewViewConfigAndroid = {
       phasedRegistrationNames: {
         bubbled: 'onSelect',
         captured: 'onSelectCapture',
-      },
-    },
-    topAssetDidLoad: {
-      phasedRegistrationNames: {
-        bubbled: 'onAssetDidLoad',
-        captured: 'onAssetDidLoadCapture',
       },
     },
   },
@@ -62,9 +56,6 @@ const ReactNativeViewViewConfigAndroid = {
     },
     topSelectionChange: {
       registrationName: 'onSelectionChange',
-    },
-    onAssetDidLoad: {
-      registrationName: 'onAssetDidLoad',
     },
   },
   validAttributes: {

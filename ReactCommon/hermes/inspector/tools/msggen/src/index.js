@@ -7,9 +7,11 @@
  * @flow
  * @format
  */
+'use strict';
 
 import fs from 'fs';
 
+// $FlowFixMe: flow doesn't know about yargs
 import yargs from 'yargs';
 
 import {Command} from './Command';
@@ -21,22 +23,11 @@ import {PropsType, Type} from './Type';
 import {HeaderWriter} from './HeaderWriter';
 import {ImplementationWriter} from './ImplementationWriter';
 
-// $FlowFixMe[cannot-resolve-module] : this isn't a module, just a JSON file.
-const standard = require('devtools-protocol/json/js_protocol.json');
-
-const custom = require('../src/custom.json');
-
 type Descriptor = {|
   types: Array<Type>,
   commands: Array<Command>,
   events: Array<Event>,
 |};
-
-function mergeDomains(original, extra) {
-  return {...original, domains: original.domains.concat(extra.domains)};
-}
-
-const proto = mergeDomains(standard, custom);
 
 function parseDomains(
   domainObjs: Array<any>,
@@ -87,9 +78,7 @@ function buildGraph(desc: Descriptor): Graph {
     if (props) {
       for (const prop of props) {
         const refId = prop.getRefDebuggerName();
-        (prop: Object).recursive = refId && refId === nodeId;
-        if (refId && refId !== nodeId) {
-          // Don't add edges for recursive properties.
+        if (refId) {
           graph.addEdge(nodeId, refId);
         }
       }
@@ -193,7 +182,7 @@ function filterReachableFromRoots(
 
 function main() {
   const args = yargs
-    .usage('Usage: msggen <header_path> <cpp_path>')
+    .usage('Usage: msggen <proto_json_path> <header_path> <cpp_path>')
     .alias('h', 'help')
     .help('h')
     .boolean('e')
@@ -202,13 +191,16 @@ function main() {
     .alias('r', 'roots')
     .describe('r', 'path to a file listing root types, events, and commands')
     .nargs('r', 1)
-    .demandCommand(2, 2).argv;
+    .demandCommand(3, 3).argv;
 
   const ignoreExperimental = !!args.e;
-  const [headerPath, implPath] = args._;
+  const [protoJsonPath, headerPath, implPath] = args._;
 
   const headerStream = fs.createWriteStream(headerPath);
   const implStream = fs.createWriteStream(implPath);
+
+  const protoJsonBuf = fs.readFileSync(protoJsonPath);
+  const proto = JSON.parse(protoJsonBuf.toString());
 
   const desc = parseDomains(proto.domains, ignoreExperimental);
   const graph = buildGraph(desc);

@@ -1,4 +1,4 @@
-/*
+/**
  * Copyright (c) Facebook, Inc. and its affiliates.
  *
  * This source code is licensed under the MIT license found in the
@@ -8,13 +8,13 @@
 #import <UIKit/UIKit.h>
 #import <memory>
 
-#import <react/renderer/componentregistry/ComponentDescriptorFactory.h>
-#import <react/renderer/core/ComponentDescriptor.h>
-#import <react/renderer/core/LayoutConstraints.h>
-#import <react/renderer/core/LayoutContext.h>
-#import <react/renderer/mounting/MountingCoordinator.h>
-#import <react/renderer/scheduler/SchedulerToolbox.h>
-#import <react/renderer/scheduler/SurfaceHandler.h>
+#import <React/RCTPrimitives.h>
+#import <react/core/ComponentDescriptor.h>
+#import <react/core/LayoutConstraints.h>
+#import <react/core/LayoutContext.h>
+#import <react/mounting/MountingCoordinator.h>
+#import <react/uimanager/ComponentDescriptorFactory.h>
+#import <react/uimanager/SchedulerToolbox.h>
 #import <react/utils/ContextContainer.h>
 
 NS_ASSUME_NONNULL_BEGIN
@@ -32,11 +32,6 @@ NS_ASSUME_NONNULL_BEGIN
                         commandName:(std::string const &)commandName
                                args:(folly::dynamic const)args;
 
-- (void)schedulerDidSendAccessibilityEvent:(facebook::react::ShadowView const &)shadowView
-                                 eventType:(std::string const &)eventType;
-
-- (void)schedulerDidSetIsJSResponder:(BOOL)isJSResponder forShadowView:(facebook::react::ShadowView const &)shadowView;
-
 @end
 
 /**
@@ -48,19 +43,23 @@ NS_ASSUME_NONNULL_BEGIN
 
 - (instancetype)initWithToolbox:(facebook::react::SchedulerToolbox)toolbox;
 
-- (void)registerSurface:(facebook::react::SurfaceHandler const &)surfaceHandler;
-- (void)unregisterSurface:(facebook::react::SurfaceHandler const &)surfaceHandler;
+- (void)startSurfaceWithSurfaceId:(facebook::react::SurfaceId)surfaceId
+                       moduleName:(NSString *)moduleName
+                     initialProps:(NSDictionary *)initialProps
+                layoutConstraints:(facebook::react::LayoutConstraints)layoutConstraints
+                    layoutContext:(facebook::react::LayoutContext)layoutContext;
 
-- (facebook::react::ComponentDescriptor const *)findComponentDescriptorByHandle_DO_NOT_USE_THIS_IS_BROKEN:
-    (facebook::react::ComponentHandle)handle;
+- (void)stopSurfaceWithSurfaceId:(facebook::react::SurfaceId)surfaceId;
 
-- (void)setupAnimationDriver:(facebook::react::SurfaceHandler const &)surfaceHandler;
+- (CGSize)measureSurfaceWithLayoutConstraints:(facebook::react::LayoutConstraints)layoutConstraints
+                                layoutContext:(facebook::react::LayoutContext)layoutContext
+                                    surfaceId:(facebook::react::SurfaceId)surfaceId;
 
-- (void)onAnimationStarted;
+- (void)constraintSurfaceLayoutWithLayoutConstraints:(facebook::react::LayoutConstraints)layoutConstraints
+                                       layoutContext:(facebook::react::LayoutContext)layoutContext
+                                           surfaceId:(facebook::react::SurfaceId)surfaceId;
 
-- (void)onAllAnimationsComplete;
-
-- (void)animationTick;
+- (const facebook::react::ComponentDescriptor &)getComponentDescriptor:(facebook::react::ComponentHandle)handle;
 
 @end
 

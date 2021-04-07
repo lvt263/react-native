@@ -1,10 +1,9 @@
-/*
+/**
  * Copyright (c) Facebook, Inc. and its affiliates.
  *
- * This source code is licensed under the MIT license found in the
- * LICENSE file in the root directory of this source tree.
+ * <p>This source code is licensed under the MIT license found in the LICENSE file in the root
+ * directory of this source tree.
  */
-
 package com.facebook.react.uimanager;
 
 import static org.fest.assertions.api.Assertions.assertThat;
@@ -35,8 +34,6 @@ import org.robolectric.RuntimeEnvironment;
 public class SimpleViewPropertyTest {
 
   @Rule public PowerMockRule rule = new PowerMockRule();
-
-  private static int sViewTag = 2;
 
   private static class ConcreteViewManager extends SimpleViewManager<View> {
 
@@ -77,9 +74,7 @@ public class SimpleViewPropertyTest {
 
   @Test
   public void testOpacity() {
-    View view =
-        mManager.createView(
-            sViewTag, mThemedContext, buildStyles(), null, new JSResponderHandler());
+    View view = mManager.createView(mThemedContext, buildStyles(), null, new JSResponderHandler());
 
     mManager.updateProperties(view, buildStyles());
     assertThat(view.getAlpha()).isEqualTo(1.0f);
@@ -93,9 +88,7 @@ public class SimpleViewPropertyTest {
 
   @Test
   public void testBackgroundColor() {
-    View view =
-        mManager.createView(
-            sViewTag, mThemedContext, buildStyles(), null, new JSResponderHandler());
+    View view = mManager.createView(mThemedContext, buildStyles(), null, new JSResponderHandler());
 
     mManager.updateProperties(view, buildStyles());
     assertThat(view.getBackground()).isEqualTo(null);

@@ -5,20 +5,19 @@
  * LICENSE file in the root directory of this source tree.
  *
  * @format
- * @flow strict
+ * @flow
  */
+
+'use strict';
 
 import NativeSourceCode from '../../NativeModules/specs/NativeSourceCode';
 
 let _cachedDevServerURL: ?string;
-let _cachedFullBundleURL: ?string;
 const FALLBACK = 'http://localhost:8081/';
 
 type DevServerInfo = {
   url: string,
-  fullBundleUrl: ?string,
   bundleLoadedFromServer: boolean,
-  ...
 };
 
 /**
@@ -27,15 +26,14 @@ type DevServerInfo = {
  */
 function getDevServer(): DevServerInfo {
   if (_cachedDevServerURL === undefined) {
-    const scriptUrl = NativeSourceCode.getConstants().scriptURL;
-    const match = scriptUrl.match(/^https?:\/\/.*?\//);
+    const match = NativeSourceCode.getConstants().scriptURL.match(
+      /^https?:\/\/.*?\//,
+    );
     _cachedDevServerURL = match ? match[0] : null;
-    _cachedFullBundleURL = match ? scriptUrl : null;
   }
 
   return {
-    url: _cachedDevServerURL ?? FALLBACK,
-    fullBundleUrl: _cachedFullBundleURL,
+    url: _cachedDevServerURL || FALLBACK,
     bundleLoadedFromServer: _cachedDevServerURL !== null,
   };
 }

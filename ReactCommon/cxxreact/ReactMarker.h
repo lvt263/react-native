@@ -1,9 +1,7 @@
-/*
- * Copyright (c) Facebook, Inc. and its affiliates.
- *
- * This source code is licensed under the MIT license found in the
- * LICENSE file in the root directory of this source tree.
- */
+// Copyright (c) Facebook, Inc. and its affiliates.
+
+// This source code is licensed under the MIT license found in the
+// LICENSE file in the root directory of this source tree.
 
 #pragma once
 
@@ -26,22 +24,13 @@ enum ReactMarkerId {
   NATIVE_MODULE_SETUP_START,
   NATIVE_MODULE_SETUP_STOP,
   REGISTER_JS_SEGMENT_START,
-  REGISTER_JS_SEGMENT_STOP,
-  REACT_INSTANCE_INIT_START,
-  REACT_INSTANCE_INIT_STOP
+  REGISTER_JS_SEGMENT_STOP
 };
 
 #ifdef __APPLE__
-using LogTaggedMarker =
-    std::function<void(const ReactMarkerId, const char *tag)>;
-using LogTaggedMarkerWithInstanceKey = std::function<
-    void(const ReactMarkerId, const char *tag, const int instanceKey)>;
+using LogTaggedMarker = std::function<void(const ReactMarkerId, const char* tag)>;
 #else
-typedef void (*LogTaggedMarker)(const ReactMarkerId, const char *tag);
-typedef void (*LogTaggedMarkerWithInstanceKey)(
-    const ReactMarkerId,
-    const char *tag,
-    const int instanceKey);
+typedef void(*LogTaggedMarker)(const ReactMarkerId, const char* tag);
 #endif
 
 #ifndef RN_EXPORT
@@ -49,10 +38,9 @@ typedef void (*LogTaggedMarkerWithInstanceKey)(
 #endif
 
 extern RN_EXPORT LogTaggedMarker logTaggedMarker;
-extern RN_EXPORT LogTaggedMarkerWithInstanceKey logTaggedMarkerWithInstanceKey;
 
 extern RN_EXPORT void logMarker(const ReactMarkerId markerId);
 
-} // namespace ReactMarker
-} // namespace react
-} // namespace facebook
+}
+}
+}

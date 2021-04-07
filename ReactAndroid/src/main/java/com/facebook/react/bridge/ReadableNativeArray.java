@@ -1,10 +1,9 @@
-/*
+/**
  * Copyright (c) Facebook, Inc. and its affiliates.
  *
- * This source code is licensed under the MIT license found in the
- * LICENSE file in the root directory of this source tree.
+ * <p>This source code is licensed under the MIT license found in the LICENSE file in the root
+ * directory of this source tree.
  */
-
 package com.facebook.react.bridge;
 
 import androidx.annotation.NonNull;
@@ -98,17 +97,17 @@ public class ReadableNativeArray extends NativeArray implements ReadableArray {
   }
 
   @Override
-  public @NonNull String getString(int index) {
+  public @Nullable String getString(int index) {
     return (String) getLocalArray()[index];
   }
 
   @Override
-  public @NonNull ReadableNativeArray getArray(int index) {
+  public @Nullable ReadableNativeArray getArray(int index) {
     return (ReadableNativeArray) getLocalArray()[index];
   }
 
   @Override
-  public @NonNull ReadableNativeMap getMap(int index) {
+  public @Nullable ReadableNativeMap getMap(int index) {
     return (ReadableNativeMap) getLocalArray()[index];
   }
 

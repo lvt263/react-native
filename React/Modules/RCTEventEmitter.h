@@ -1,4 +1,4 @@
-/*
+/**
  * Copyright (c) Facebook, Inc. and its affiliates.
  *
  * This source code is licensed under the MIT license found in the
@@ -6,19 +6,14 @@
  */
 
 #import <React/RCTBridge.h>
-#import <React/RCTJSInvokerModule.h>
 
 /**
  * RCTEventEmitter is an abstract base class to be used for modules that emit
  * events to be observed by JS.
  */
-@interface RCTEventEmitter : NSObject <RCTBridgeModule, RCTJSInvokerModule, RCTInvalidating>
+@interface RCTEventEmitter : NSObject <RCTBridgeModule>
 
 @property (nonatomic, weak) RCTBridge *bridge;
-@property (nonatomic, weak) RCTModuleRegistry *moduleRegistry;
-@property (nonatomic, weak) RCTViewRegistry *viewRegistry_DEPRECATED;
-
-- (instancetype)initWithDisabledObservation;
 
 /**
  * Override this method to return an array of supported event names. Attempting
@@ -40,8 +35,6 @@
  */
 - (void)startObserving;
 - (void)stopObserving;
-
-- (void)invalidate NS_REQUIRES_SUPER;
 
 - (void)addListener:(NSString *)eventName;
 - (void)removeListeners:(double)count;

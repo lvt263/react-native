@@ -1,4 +1,4 @@
-/*
+/**
  * Copyright (c) Facebook, Inc. and its affiliates.
  *
  * This source code is licensed under the MIT license found in the
@@ -10,11 +10,8 @@
 #import <mutex>
 
 #import <React/RCTNetworking.h>
-#import <ReactCommon/RCTTurboModule.h>
 
-#import "RCTNetworkPlugins.h"
-
-@interface RCTHTTPRequestHandler () <NSURLSessionDataDelegate, RCTTurboModule>
+@interface RCTHTTPRequestHandler () <NSURLSessionDataDelegate>
 
 @end
 
@@ -25,7 +22,7 @@
   std::mutex _mutex;
 }
 
-@synthesize moduleRegistry = _moduleRegistry;
+@synthesize bridge = _bridge;
 @synthesize methodQueue = _methodQueue;
 
 RCT_EXPORT_MODULE()
@@ -71,10 +68,10 @@ RCT_EXPORT_MODULE()
     // If you do not want to override default behavior, do nothing or set key with value false
     NSDictionary *infoDictionary = [[NSBundle mainBundle] infoDictionary];
     NSNumber *useWifiOnly = [infoDictionary objectForKey:@"ReactNetworkForceWifiOnly"];
-
+    
     NSOperationQueue *callbackQueue = [NSOperationQueue new];
     callbackQueue.maxConcurrentOperationCount = 1;
-    callbackQueue.underlyingQueue = [[_moduleRegistry moduleForName:"Networking"] methodQueue];
+    callbackQueue.underlyingQueue = [[_bridge networking] methodQueue];
     NSURLSessionConfiguration *configuration = [NSURLSessionConfiguration defaultSessionConfiguration];
     // Set allowsCellularAccess to NO ONLY if key ReactNetworkForceWifiOnly exists AND its value is YES
     if (useWifiOnly) {
@@ -175,7 +172,3 @@ didReceiveResponse:(NSURLResponse *)response
 }
 
 @end
-
-Class RCTHTTPRequestHandlerCls(void) {
-  return RCTHTTPRequestHandler.class;
-}

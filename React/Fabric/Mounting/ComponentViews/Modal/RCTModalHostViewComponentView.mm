@@ -1,4 +1,4 @@
-/*
+/**
  * Copyright (c) Facebook, Inc. and its affiliates.
  *
  * This source code is licensed under the MIT license found in the
@@ -7,20 +7,18 @@
 
 #import "RCTModalHostViewComponentView.h"
 
-#import <React/RCTBridge+Private.h>
-#import <React/RCTModalManager.h>
 #import <React/UIView+React.h>
-#import <react/renderer/components/modal/ModalHostViewComponentDescriptor.h>
-#import <react/renderer/components/modal/ModalHostViewState.h>
-#import <react/renderer/components/rncore/EventEmitters.h>
-#import <react/renderer/components/rncore/Props.h>
+#import <react/components/modal/ModalHostViewComponentDescriptor.h>
+#import <react/components/modal/ModalHostViewState.h>
+#import <react/components/rncore/EventEmitters.h>
+#import <react/components/rncore/Props.h>
 
 #import "RCTConversions.h"
-
 #import "RCTFabricModalHostViewController.h"
 
 using namespace facebook::react;
 
+#if !TARGET_OS_TV
 static UIInterfaceOrientationMask supportedOrientationsMask(ModalHostViewSupportedOrientationsMask mask)
 {
   UIInterfaceOrientationMask supportedOrientations = 0;
@@ -55,6 +53,7 @@ static UIInterfaceOrientationMask supportedOrientationsMask(ModalHostViewSupport
 
   return supportedOrientations;
 }
+#endif
 
 static std::tuple<BOOL, UIModalTransitionStyle> animationConfiguration(ModalHostViewAnimationType const animation)
 {
@@ -85,12 +84,10 @@ static UIModalPresentationStyle presentationConfiguration(ModalHostViewProps con
   }
 }
 
-static ModalHostViewEventEmitter::OnOrientationChange onOrientationChangeStruct(CGRect rect)
+static ModalHostViewOnOrientationChangeStruct onOrientationChangeStruct(CGRect rect)
 {
-  ;
-  auto orientation = rect.size.width < rect.size.height
-      ? ModalHostViewEventEmitter::OnOrientationChangeOrientation::Portrait
-      : ModalHostViewEventEmitter::OnOrientationChangeOrientation::Landscape;
+  auto orientation = rect.size.width < rect.size.height ? ModalHostViewOnOrientationChangeOrientationStruct::Portrait
+                                                        : ModalHostViewOnOrientationChangeOrientationStruct::Landscape;
   return {orientation};
 }
 
@@ -102,8 +99,6 @@ static ModalHostViewEventEmitter::OnOrientationChange onOrientationChangeStruct(
   RCTFabricModalHostViewController *_viewController;
   ModalHostViewShadowNode::ConcreteState::Shared _state;
   BOOL _shouldAnimatePresentation;
-  BOOL _isPresented;
-  UIView *_modalContentsSnapshot;
 }
 
 - (instancetype)initWithFrame:(CGRect)frame
@@ -112,82 +107,38 @@ static ModalHostViewEventEmitter::OnOrientationChange onOrientationChangeStruct(
     static const auto defaultProps = std::make_shared<const ModalHostViewProps>();
     _props = defaultProps;
     _shouldAnimatePresentation = YES;
-
-    _isPresented = NO;
+    _viewController = [RCTFabricModalHostViewController new];
+    _viewController.modalTransitionStyle = UIModalTransitionStyleCoverVertical;
+    _viewController.delegate = self;
   }
 
   return self;
 }
 
-- (RCTFabricModalHostViewController *)viewController
+- (BOOL)isViewControllerPresented
 {
-  if (!_viewController) {
-    _viewController = [RCTFabricModalHostViewController new];
-    _viewController.modalTransitionStyle = UIModalTransitionStyleCoverVertical;
-    _viewController.delegate = self;
-  }
-  return _viewController;
-}
-
-- (void)presentViewController:(UIViewController *)modalViewController
-                     animated:(BOOL)animated
-                   completion:(void (^)(void))completion
-{
-  UIViewController *controller = [self reactViewController];
-  [controller presentViewController:modalViewController animated:animated completion:completion];
-}
-
-- (void)dismissViewController:(UIViewController *)modalViewController animated:(BOOL)animated
-{
-  [modalViewController dismissViewControllerAnimated:animated
-                                          completion:^{
-                                            [self didDismissViewController];
-                                          }];
-}
-
-- (void)didDismissViewController
-{
-  const auto &props = *std::static_pointer_cast<ModalHostViewProps const>(_props);
-  [[RCTBridge currentBridge].modalManager modalDismissed:@(props.identifier)];
+  return _viewController.presentingViewController != nil;
 }
 
 - (void)ensurePresentedOnlyIfNeeded
 {
-  BOOL shouldBePresented = !_isPresented && self.window;
+  BOOL shouldBePresented = !self.isViewControllerPresented && self.window;
   if (shouldBePresented) {
-    _isPresented = YES;
-    [self presentViewController:self.viewController
-                       animated:_shouldAnimatePresentation
-                     completion:^{
-                       if (!self->_eventEmitter) {
-                         return;
-                       }
-
-                       assert(std::dynamic_pointer_cast<ModalHostViewEventEmitter const>(self->_eventEmitter));
-                       auto eventEmitter =
-                           std::static_pointer_cast<ModalHostViewEventEmitter const>(self->_eventEmitter);
-                       eventEmitter->onShow(ModalHostViewEventEmitter::OnShow{});
-                     }];
+    UIViewController *controller = [self reactViewController];
+    return [controller
+        presentViewController:_viewController
+                     animated:_shouldAnimatePresentation
+                   completion:^{
+                     ModalHostViewOnShowStruct onShow;
+                     std::dynamic_pointer_cast<const ModalHostViewEventEmitter>(self->_eventEmitter)->onShow(onShow);
+                   }];
   }
 
-  BOOL shouldBeHidden = _isPresented && !self.superview;
+  BOOL shouldBeHidden = self.isViewControllerPresented && !self.superview;
   if (shouldBeHidden) {
-    _isPresented = NO;
-    // To animate dismissal of view controller, snapshot of
-    // view hierarchy needs to be added to the UIViewController.
-    [self.viewController.view addSubview:_modalContentsSnapshot];
-    [self dismissViewController:self.viewController animated:_shouldAnimatePresentation];
+    [_viewController dismissViewControllerAnimated:_shouldAnimatePresentation completion:nil];
   }
 }
-
-#pragma mark - RCTMountingTransactionObserving
-
-- (void)mountingTransactionWillMountWithMetadata:(MountingTransactionMetadata const &)metadata
-{
-  _modalContentsSnapshot = [self.viewController.view snapshotViewAfterScreenUpdates:NO];
-}
-
-#pragma mark - UIView methods
 
 - (void)didMoveToWindow
 {
@@ -205,12 +156,8 @@ static ModalHostViewEventEmitter::OnOrientationChange onOrientationChangeStruct(
 
 - (void)boundsDidChange:(CGRect)newBounds
 {
-  if (_eventEmitter) {
-    assert(std::dynamic_pointer_cast<ModalHostViewEventEmitter const>(_eventEmitter));
-
-    auto eventEmitter = std::static_pointer_cast<ModalHostViewEventEmitter const>(_eventEmitter);
-    eventEmitter->onOrientationChange(onOrientationChangeStruct(newBounds));
-  }
+  std::dynamic_pointer_cast<const ModalHostViewEventEmitter>(_eventEmitter)
+      ->onOrientationChange(onOrientationChangeStruct(newBounds));
 
   if (_state != nullptr) {
     auto newState = ModalHostViewState{RCTSizeFromCGSize(newBounds.size)};
@@ -225,27 +172,19 @@ static ModalHostViewEventEmitter::OnOrientationChange onOrientationChangeStruct(
   return concreteComponentDescriptorProvider<ModalHostViewComponentDescriptor>();
 }
 
-- (void)prepareForRecycle
-{
-  [super prepareForRecycle];
-  _state.reset();
-  _viewController = nil;
-  _isPresented = NO;
-}
-
 - (void)updateProps:(Props::Shared const &)props oldProps:(Props::Shared const &)oldProps
 {
   const auto &newProps = *std::static_pointer_cast<const ModalHostViewProps>(props);
 
 #if !TARGET_OS_TV
-  self.viewController.supportedInterfaceOrientations = supportedOrientationsMask(newProps.supportedOrientations);
+  _viewController.supportedInterfaceOrientations = supportedOrientationsMask(newProps.supportedOrientations);
 #endif
 
-  auto const [shouldAnimate, transitionStyle] = animationConfiguration(newProps.animationType);
-  _shouldAnimatePresentation = shouldAnimate;
-  self.viewController.modalTransitionStyle = transitionStyle;
+  std::tuple<BOOL, UIModalTransitionStyle> result = animationConfiguration(newProps.animationType);
+  _shouldAnimatePresentation = std::get<0>(result);
+  _viewController.modalTransitionStyle = std::get<1>(result);
 
-  self.viewController.modalPresentationStyle = presentationConfiguration(newProps);
+  _viewController.modalPresentationStyle = presentationConfiguration(newProps);
 
   [super updateProps:props oldProps:oldProps];
 }
@@ -258,7 +197,7 @@ static ModalHostViewEventEmitter::OnOrientationChange onOrientationChangeStruct(
 
 - (void)mountChildComponentView:(UIView<RCTComponentViewProtocol> *)childComponentView index:(NSInteger)index
 {
-  [self.viewController.view insertSubview:childComponentView atIndex:index];
+  [_viewController.view insertSubview:childComponentView atIndex:index];
 }
 
 - (void)unmountChildComponentView:(UIView<RCTComponentViewProtocol> *)childComponentView index:(NSInteger)index
@@ -267,19 +206,3 @@ static ModalHostViewEventEmitter::OnOrientationChange onOrientationChangeStruct(
 }
 
 @end
-
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-// Can't the import generated Plugin.h because plugins are not in this BUCK target
-Class<RCTComponentViewProtocol> RCTModalHostViewCls(void);
-
-#ifdef __cplusplus
-}
-#endif
-
-Class<RCTComponentViewProtocol> RCTModalHostViewCls(void)
-{
-  return RCTModalHostViewComponentView.class;
-}

@@ -1,4 +1,4 @@
-/*
+/**
  * Copyright (c) Facebook, Inc. and its affiliates.
  *
  * This source code is licensed under the MIT license found in the
@@ -35,17 +35,8 @@ RCT_EXPORT_MODULE();
 - (void)modalDismissed:(NSNumber *)modalID
 {
   if (_shouldEmit) {
-    [self sendEventWithName:@"modalDismissed" body:@{@"modalID" : modalID}];
+    [self sendEventWithName:@"modalDismissed" body:@{ @"modalID": modalID }];
   }
-}
-
-@end
-
-@implementation RCTBridge (RCTDevSettings)
-
-- (RCTModalManager *)modalManager
-{
-  return [self moduleForClass:[RCTModalManager class]];
 }
 
 @end

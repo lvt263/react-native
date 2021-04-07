@@ -1,4 +1,4 @@
-/*
+/**
  * Copyright (c) Facebook, Inc. and its affiliates.
  *
  * This source code is licensed under the MIT license found in the
@@ -9,18 +9,15 @@
 
 #import <mutex>
 
-#import <FBReactNativeSpec/FBReactNativeSpec.h>
 #import <React/RCTConvert.h>
 #import <React/RCTNetworking.h>
 #import <React/RCTUtils.h>
 #import <React/RCTWebSocketModule.h>
-
-#import "RCTBlobPlugins.h"
 #import "RCTBlobCollector.h"
 
 static NSString *const kBlobURIScheme = @"blob";
 
-@interface RCTBlobManager () <RCTNetworkingRequestHandler, RCTNetworkingResponseHandler, RCTWebSocketContentHandler, NativeBlobModuleSpec>
+@interface RCTBlobManager () <RCTNetworkingRequestHandler, RCTNetworkingResponseHandler, RCTWebSocketContentHandler>
 
 @end
 
@@ -37,7 +34,6 @@ static NSString *const kBlobURIScheme = @"blob";
 RCT_EXPORT_MODULE(BlobModule)
 
 @synthesize bridge = _bridge;
-@synthesize moduleRegistry = _moduleRegistry;
 @synthesize methodQueue = _methodQueue;
 
 - (void)setBridge:(RCTBridge *)bridge
@@ -140,39 +136,31 @@ RCT_EXPORT_MODULE(BlobModule)
 
 RCT_EXPORT_METHOD(addNetworkingHandler)
 {
-  RCTNetworking *const networking = [_moduleRegistry moduleForName:"Networking"];
-
-  // TODO(T63516227): Why can methodQueue be nil here?
-  // We don't want to do anything when methodQueue is nil.
-  if (!networking.methodQueue) {
-    return;
-  }
-
-  dispatch_async(networking.methodQueue, ^{
-    [networking addRequestHandler:self];
-    [networking addResponseHandler:self];
+  dispatch_async(_bridge.networking.methodQueue, ^{
+    [self->_bridge.networking addRequestHandler:self];
+    [self->_bridge.networking addResponseHandler:self];
   });
 }
 
-RCT_EXPORT_METHOD(addWebSocketHandler:(double)socketID)
+RCT_EXPORT_METHOD(addWebSocketHandler:(nonnull NSNumber *)socketID)
 {
-  dispatch_async(((RCTWebSocketModule *)[_moduleRegistry moduleForName:"WebSocketModule"]).methodQueue, ^{
-    [[self->_moduleRegistry moduleForName:"WebSocketModule"] setContentHandler:self forSocketID:[NSNumber numberWithDouble:socketID]];
+  dispatch_async(_bridge.webSocketModule.methodQueue, ^{
+    [self->_bridge.webSocketModule setContentHandler:self forSocketID:socketID];
   });
 }
 
-RCT_EXPORT_METHOD(removeWebSocketHandler:(double)socketID)
+RCT_EXPORT_METHOD(removeWebSocketHandler:(nonnull NSNumber *)socketID)
 {
-  dispatch_async(((RCTWebSocketModule *)[_moduleRegistry moduleForName:"WebSocketModule"]).methodQueue, ^{
-    [[self->_moduleRegistry moduleForName:"WebSocketModule"] setContentHandler:nil forSocketID:[NSNumber numberWithDouble:socketID]];
+  dispatch_async(_bridge.webSocketModule.methodQueue, ^{
+    [self->_bridge.webSocketModule setContentHandler:nil forSocketID:socketID];
   });
 }
 
 // @lint-ignore FBOBJCUNTYPEDCOLLECTION1
-RCT_EXPORT_METHOD(sendOverSocket:(NSDictionary *)blob socketID:(double)socketID)
+RCT_EXPORT_METHOD(sendOverSocket:(NSDictionary *)blob socketID:(nonnull NSNumber *)socketID)
 {
-  dispatch_async(((RCTWebSocketModule *)[_moduleRegistry moduleForName:"WebSocketModule"]).methodQueue, ^{
-    [[self->_moduleRegistry moduleForName:"WebSocketModule"] sendData:[self resolve:blob] forSocketID:[NSNumber numberWithDouble:socketID]];
+  dispatch_async(_bridge.webSocketModule.methodQueue, ^{
+    [self->_bridge.webSocketModule sendData:[self resolve:blob] forSocketID:socketID];
   });
 }
 
@@ -310,13 +298,4 @@ RCT_EXPORT_METHOD(release:(NSString *)blobId)
   };
 }
 
-- (std::shared_ptr<facebook::react::TurboModule>)getTurboModule:(const facebook::react::ObjCTurboModule::InitParams &)params
-{
-  return std::make_shared<facebook::react::NativeBlobModuleSpecJSI>(params);
-}
-
 @end
-
-Class RCTBlobManagerCls(void) {
-  return RCTBlobManager.class;
-}

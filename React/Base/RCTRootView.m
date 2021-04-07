@@ -1,4 +1,4 @@
-/*
+/**
  * Copyright (c) Facebook, Inc. and its affiliates.
  *
  * This source code is licensed under the MIT license found in the
@@ -12,21 +12,25 @@
 #import <objc/runtime.h>
 
 #import "RCTAssert.h"
-#import "RCTBridge+Private.h"
 #import "RCTBridge.h"
-#import "RCTConstants.h"
+#import "RCTBridge+Private.h"
+#import "RCTEventDispatcher.h"
 #import "RCTKeyCommands.h"
 #import "RCTLog.h"
 #import "RCTPerformanceLogger.h"
 #import "RCTProfile.h"
 #import "RCTRootContentView.h"
-#import "RCTRootShadowView.h"
 #import "RCTTouchHandler.h"
 #import "RCTUIManager.h"
 #import "RCTUIManagerUtils.h"
 #import "RCTUtils.h"
 #import "RCTView.h"
 #import "UIView+React.h"
+
+#if TARGET_OS_TV
+#import "RCTTVRemoteHandler.h"
+#import "RCTTVNavigationEventEmitter.h"
+#endif
 
 NSString *const RCTContentDidAppearNotification = @"RCTContentDidAppearNotification";
 
@@ -36,7 +40,8 @@ NSString *const RCTContentDidAppearNotification = @"RCTContentDidAppearNotificat
 
 @end
 
-@implementation RCTRootView {
+@implementation RCTRootView
+{
   RCTBridge *_bridge;
   NSString *_moduleName;
   RCTRootContentView *_contentView;
@@ -44,10 +49,9 @@ NSString *const RCTContentDidAppearNotification = @"RCTContentDidAppearNotificat
   CGSize _intrinsicContentSize;
 }
 
-- (instancetype)initWithFrame:(CGRect)frame
-                       bridge:(RCTBridge *)bridge
-                   moduleName:(NSString *)moduleName
-            initialProperties:(NSDictionary *)initialProperties
+- (instancetype)initWithBridge:(RCTBridge *)bridge
+                    moduleName:(NSString *)moduleName
+             initialProperties:(NSDictionary *)initialProperties
 {
   RCTAssertMainQueue();
   RCTAssert(bridge, @"A bridge instance is required to create an RCTRootView");
@@ -58,7 +62,7 @@ NSString *const RCTContentDidAppearNotification = @"RCTContentDidAppearNotificat
     [bridge.performanceLogger markStartForTag:RCTPLTTI];
   }
 
-  if (self = [super initWithFrame:frame]) {
+  if (self = [super initWithFrame:CGRectZero]) {
     self.backgroundColor = [UIColor whiteColor];
 
     _bridge = bridge;
@@ -67,7 +71,6 @@ NSString *const RCTContentDidAppearNotification = @"RCTContentDidAppearNotificat
     _loadingViewFadeDelay = 0.25;
     _loadingViewFadeDuration = 0.25;
     _sizeFlexibility = RCTRootViewSizeFlexibilityNone;
-    _minimumSize = CGSizeZero;
 
     [[NSNotificationCenter defaultCenter] addObserver:self
                                              selector:@selector(bridgeDidReload)
@@ -84,6 +87,13 @@ NSString *const RCTContentDidAppearNotification = @"RCTContentDidAppearNotificat
                                                  name:RCTContentDidAppearNotification
                                                object:self];
 
+#if TARGET_OS_TV
+    self.tvRemoteHandler = [RCTTVRemoteHandler new];
+    for (NSString *key in [self.tvRemoteHandler.tvRemoteGestureRecognizers allKeys]) {
+      [self addGestureRecognizer:self.tvRemoteHandler.tvRemoteGestureRecognizers[key]];
+    }
+#endif
+
     [self showLoadingView];
 
     // Immediately schedule the application to be started.
@@ -96,25 +106,30 @@ NSString *const RCTContentDidAppearNotification = @"RCTContentDidAppearNotificat
   return self;
 }
 
-- (instancetype)initWithBridge:(RCTBridge *)bridge
-                    moduleName:(NSString *)moduleName
-             initialProperties:(NSDictionary *)initialProperties
-{
-  return [self initWithFrame:CGRectZero bridge:bridge moduleName:moduleName initialProperties:initialProperties];
-}
-
 - (instancetype)initWithBundleURL:(NSURL *)bundleURL
                        moduleName:(NSString *)moduleName
                 initialProperties:(NSDictionary *)initialProperties
                     launchOptions:(NSDictionary *)launchOptions
 {
-  RCTBridge *bridge = [[RCTBridge alloc] initWithBundleURL:bundleURL moduleProvider:nil launchOptions:launchOptions];
+  RCTBridge *bridge = [[RCTBridge alloc] initWithBundleURL:bundleURL
+                                            moduleProvider:nil
+                                             launchOptions:launchOptions];
 
   return [self initWithBridge:bridge moduleName:moduleName initialProperties:initialProperties];
 }
 
-RCT_NOT_IMPLEMENTED(-(instancetype)initWithFrame : (CGRect)frame)
-RCT_NOT_IMPLEMENTED(-(instancetype)initWithCoder : (NSCoder *)aDecoder)
+RCT_NOT_IMPLEMENTED(- (instancetype)initWithFrame:(CGRect)frame)
+RCT_NOT_IMPLEMENTED(- (instancetype)initWithCoder:(NSCoder *)aDecoder)
+
+#if TARGET_OS_TV
+- (UIView *)preferredFocusedView
+{
+  if (self.reactPreferredFocusedView) {
+    return self.reactPreferredFocusedView;
+  }
+  return [super preferredFocusedView];
+}
+#endif
 
 #pragma mark - passThroughTouches
 
@@ -139,10 +154,14 @@ RCT_NOT_IMPLEMENTED(-(instancetype)initWithCoder : (NSCoder *)aDecoder)
   // Following the current `size` and current `sizeFlexibility` policy.
   fitSize = CGSizeMake(
       _sizeFlexibility & RCTRootViewSizeFlexibilityWidth ? fitSize.width : currentSize.width,
-      _sizeFlexibility & RCTRootViewSizeFlexibilityHeight ? fitSize.height : currentSize.height);
+      _sizeFlexibility & RCTRootViewSizeFlexibilityHeight ? fitSize.height : currentSize.height
+    );
 
   // Following the given size constraints.
-  fitSize = CGSizeMake(MIN(size.width, fitSize.width), MIN(size.height, fitSize.height));
+  fitSize = CGSizeMake(
+      MIN(size.width, fitSize.width),
+      MIN(size.height, fitSize.height)
+    );
 
   return fitSize;
 }
@@ -151,24 +170,10 @@ RCT_NOT_IMPLEMENTED(-(instancetype)initWithCoder : (NSCoder *)aDecoder)
 {
   [super layoutSubviews];
   _contentView.frame = self.bounds;
-  _loadingView.center = (CGPoint){CGRectGetMidX(self.bounds), CGRectGetMidY(self.bounds)};
-}
-
-- (void)setMinimumSize:(CGSize)minimumSize
-{
-  if (CGSizeEqualToSize(_minimumSize, minimumSize)) {
-    return;
-  }
-  _minimumSize = minimumSize;
-  __block NSNumber *tag = self.reactTag;
-  __weak typeof(self) weakSelf = self;
-  RCTExecuteOnUIManagerQueue(^{
-    __strong typeof(self) strongSelf = weakSelf;
-    if (strongSelf && strongSelf->_bridge.isValid) {
-      RCTRootShadowView *shadowView = (RCTRootShadowView *)[strongSelf->_bridge.uiManager shadowViewForReactTag:tag];
-      shadowView.minimumSize = minimumSize;
-    }
-  });
+  _loadingView.center = (CGPoint){
+    CGRectGetMidX(self.bounds),
+    CGRectGetMidY(self.bounds)
+  };
 }
 
 - (UIViewController *)reactViewController
@@ -201,20 +206,18 @@ RCT_NOT_IMPLEMENTED(-(instancetype)initWithCoder : (NSCoder *)aDecoder)
 {
   if (_loadingView.superview == self && _contentView.contentHasAppeared) {
     if (_loadingViewFadeDuration > 0) {
-      dispatch_after(
-          dispatch_time(DISPATCH_TIME_NOW, (int64_t)(_loadingViewFadeDelay * NSEC_PER_SEC)),
-          dispatch_get_main_queue(),
-          ^{
-            [UIView transitionWithView:self
-                duration:self->_loadingViewFadeDuration
-                options:UIViewAnimationOptionTransitionCrossDissolve
-                animations:^{
-                  self->_loadingView.hidden = YES;
-                }
-                completion:^(__unused BOOL finished) {
-                  [self->_loadingView removeFromSuperview];
-                }];
-          });
+      dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(_loadingViewFadeDelay * NSEC_PER_SEC)),
+                     dispatch_get_main_queue(), ^{
+
+                       [UIView transitionWithView:self
+                                         duration:self->_loadingViewFadeDuration
+                                          options:UIViewAnimationOptionTransitionCrossDissolve
+                                       animations:^{
+                                         self->_loadingView.hidden = YES;
+                                       } completion:^(__unused BOOL finished) {
+                                         [self->_loadingView removeFromSuperview];
+                                       }];
+                     });
     } else {
       _loadingView.hidden = YES;
       [_loadingView removeFromSuperview];
@@ -283,12 +286,15 @@ RCT_NOT_IMPLEMENTED(-(instancetype)initWithCoder : (NSCoder *)aDecoder)
 {
   NSString *moduleName = _moduleName ?: @"";
   NSDictionary *appParameters = @{
-    @"rootTag" : _contentView.reactTag,
-    @"initialProps" : _appProperties ?: @{},
+    @"rootTag": _contentView.reactTag,
+    @"initialProps": _appProperties ?: @{},
   };
 
   RCTLogInfo(@"Running application %@ (%@)", moduleName, appParameters);
-  [bridge enqueueJSCall:@"AppRegistry" method:@"runApplication" args:@[ moduleName, appParameters ] completion:NULL];
+  [bridge enqueueJSCall:@"AppRegistry"
+                 method:@"runApplication"
+                   args:@[moduleName, appParameters]
+             completion:NULL];
 }
 
 - (void)setSizeFlexibility:(RCTRootViewSizeFlexibility)sizeFlexibility
@@ -341,7 +347,7 @@ RCT_NOT_IMPLEMENTED(-(instancetype)initWithCoder : (NSCoder *)aDecoder)
   if (bothSizesHaveAZeroDimension || sizesAreEqual) {
     return;
   }
-
+  
   [self invalidateIntrinsicContentSize];
   [self.superview setNeedsLayout];
 
@@ -360,20 +366,9 @@ RCT_NOT_IMPLEMENTED(-(instancetype)initWithCoder : (NSCoder *)aDecoder)
   [self showLoadingView];
 }
 
-- (void)traitCollectionDidChange:(UITraitCollection *)previousTraitCollection
-{
-  [super traitCollectionDidChange:previousTraitCollection];
-
-  [[NSNotificationCenter defaultCenter]
-      postNotificationName:RCTUserInterfaceStyleDidChangeNotification
-                    object:self
-                  userInfo:@{
-                    RCTUserInterfaceStyleDidChangeNotificationTraitCollectionKey : self.traitCollection,
-                  }];
-}
-
 - (void)dealloc
 {
+  [[NSNotificationCenter defaultCenter] removeObserver:self];
   [_contentView invalidate];
 }
 

@@ -1,16 +1,15 @@
-/*
+/**
  * Copyright (c) Facebook, Inc. and its affiliates.
  *
- * This source code is licensed under the MIT license found in the
- * LICENSE file in the root directory of this source tree.
+ * <p>This source code is licensed under the MIT license found in the LICENSE file in the root
+ * directory of this source tree.
  */
-
 package com.facebook.react.views.slider;
 
-import androidx.annotation.Nullable;
 import com.facebook.react.bridge.Arguments;
 import com.facebook.react.bridge.WritableMap;
 import com.facebook.react.uimanager.events.Event;
+import com.facebook.react.uimanager.events.RCTEventEmitter;
 
 /** Event emitted when the user finishes dragging the slider. */
 public class ReactSlidingCompleteEvent extends Event<ReactSlidingCompleteEvent> {
@@ -19,13 +18,8 @@ public class ReactSlidingCompleteEvent extends Event<ReactSlidingCompleteEvent> 
 
   private final double mValue;
 
-  @Deprecated
   public ReactSlidingCompleteEvent(int viewId, double value) {
-    this(-1, viewId, value);
-  }
-
-  public ReactSlidingCompleteEvent(int surfaceId, int viewId, double value) {
-    super(surfaceId, viewId);
+    super(viewId);
     mValue = value;
   }
 
@@ -38,15 +32,6 @@ public class ReactSlidingCompleteEvent extends Event<ReactSlidingCompleteEvent> 
     return EVENT_NAME;
   }
 
-  @Nullable
-  @Override
-  protected WritableMap getEventData() {
-    WritableMap eventData = Arguments.createMap();
-    eventData.putInt("target", getViewTag());
-    eventData.putDouble("value", getValue());
-    return eventData;
-  }
-
   @Override
   public short getCoalescingKey() {
     return 0;
@@ -55,5 +40,17 @@ public class ReactSlidingCompleteEvent extends Event<ReactSlidingCompleteEvent> 
   @Override
   public boolean canCoalesce() {
     return false;
+  }
+
+  @Override
+  public void dispatch(RCTEventEmitter rctEventEmitter) {
+    rctEventEmitter.receiveEvent(getViewTag(), getEventName(), serializeEventData());
+  }
+
+  private WritableMap serializeEventData() {
+    WritableMap eventData = Arguments.createMap();
+    eventData.putInt("target", getViewTag());
+    eventData.putDouble("value", getValue());
+    return eventData;
   }
 }

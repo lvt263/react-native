@@ -3,9 +3,12 @@
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
+ *
  */
 
-import {Property} from '../src/Property.js';
+'use strict';
+
+import { Property } from '../src/Property.js';
 
 test('parses required primitive prop', () => {
   let obj = {

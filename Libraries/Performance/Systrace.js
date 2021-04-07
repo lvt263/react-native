@@ -4,7 +4,7 @@
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  *
- * @flow strict
+ * @flow
  * @format
  */
 
@@ -87,25 +87,11 @@ const userTimingPolyfill = __DEV__
     }
   : null;
 
-function installPerformanceHooks(polyfill) {
-  if (polyfill) {
-    if (global.performance === undefined) {
-      global.performance = {};
-    }
-
-    Object.keys(polyfill).forEach(methodName => {
-      if (typeof global.performance[methodName] !== 'function') {
-        global.performance[methodName] = polyfill[methodName];
-      }
-    });
-  }
-}
-
 const Systrace = {
   installReactHook() {
     if (_enabled) {
       if (__DEV__) {
-        installPerformanceHooks(userTimingPolyfill);
+        global.performance = userTimingPolyfill;
       }
     }
     _canInstallReactHook = true;
@@ -122,8 +108,8 @@ const Systrace = {
             global.nativeTraceEndLegacy(TRACE_TAG_JS_VM_CALLS);
         }
         if (_canInstallReactHook) {
-          if (enabled) {
-            installPerformanceHooks(userTimingPolyfill);
+          if (enabled && global.performance === undefined) {
+            global.performance = userTimingPolyfill;
           }
         }
       }
@@ -138,18 +124,11 @@ const Systrace = {
   /**
    * beginEvent/endEvent for starting and then ending a profile within the same call stack frame
    **/
-  beginEvent(
-    profileName?: string | (() => string),
-    args?: {[string]: string, ...},
-  ) {
+  beginEvent(profileName?: any, args?: any) {
     if (_enabled) {
-      const profileNameString =
+      profileName =
         typeof profileName === 'function' ? profileName() : profileName;
-      global.nativeTraceBeginSection(
-        TRACE_TAG_REACT_APPS,
-        profileNameString,
-        args,
-      );
+      global.nativeTraceBeginSection(TRACE_TAG_REACT_APPS, profileName, args);
     }
   },
 
@@ -164,28 +143,28 @@ const Systrace = {
    * occur on another thread or out of the current stack frame, eg await
    * the returned cookie variable should be used as input into the endAsyncEvent call to end the profile
    **/
-  beginAsyncEvent(profileName?: string | (() => string)): number {
+  beginAsyncEvent(profileName?: any): any {
     const cookie = _asyncCookie;
     if (_enabled) {
       _asyncCookie++;
-      const profileNameString =
+      profileName =
         typeof profileName === 'function' ? profileName() : profileName;
       global.nativeTraceBeginAsyncSection(
         TRACE_TAG_REACT_APPS,
-        profileNameString,
+        profileName,
         cookie,
       );
     }
     return cookie;
   },
 
-  endAsyncEvent(profileName?: string | (() => string), cookie?: number) {
+  endAsyncEvent(profileName?: any, cookie?: any) {
     if (_enabled) {
-      const profileNameString =
+      profileName =
         typeof profileName === 'function' ? profileName() : profileName;
       global.nativeTraceEndAsyncSection(
         TRACE_TAG_REACT_APPS,
-        profileNameString,
+        profileName,
         cookie,
       );
     }
@@ -194,24 +173,22 @@ const Systrace = {
   /**
    * counterEvent registers the value to the profileName on the systrace timeline
    **/
-  counterEvent(profileName?: string | (() => string), value?: number) {
+  counterEvent(profileName?: any, value?: any) {
     if (_enabled) {
-      const profileNameString =
+      profileName =
         typeof profileName === 'function' ? profileName() : profileName;
       global.nativeTraceCounter &&
-        global.nativeTraceCounter(
-          TRACE_TAG_REACT_APPS,
-          profileNameString,
-          value,
-        );
+        global.nativeTraceCounter(TRACE_TAG_REACT_APPS, profileName, value);
     }
   },
 };
 
 if (__DEV__) {
-  // The metro require polyfill can not have dependencies (true for all polyfills).
-  // Ensure that `Systrace` is available in polyfill by exposing it globally.
-  global[(global.__METRO_GLOBAL_PREFIX__ || '') + '__SYSTRACE'] = Systrace;
+  // This is needed, because require callis in polyfills are not processed as
+  // other files. Therefore, calls to `require('moduleId')` are not replaced
+  // with numeric IDs
+  // TODO(davidaurelio) Scan polyfills for dependencies, too (t9759686)
+  (require: any).Systrace = Systrace;
 }
 
 module.exports = Systrace;

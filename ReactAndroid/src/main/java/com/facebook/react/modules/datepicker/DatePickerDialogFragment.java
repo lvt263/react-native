@@ -1,10 +1,9 @@
-/*
+/**
  * Copyright (c) Facebook, Inc. and its affiliates.
  *
- * This source code is licensed under the MIT license found in the
- * LICENSE file in the root directory of this source tree.
+ * <p>This source code is licensed under the MIT license found in the LICENSE file in the root
+ * directory of this source tree.
  */
-
 package com.facebook.react.modules.datepicker;
 
 import android.annotation.SuppressLint;
@@ -15,6 +14,7 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.DialogInterface.OnDismissListener;
 import android.graphics.drawable.ColorDrawable;
+import android.os.Build;
 import android.os.Bundle;
 import android.widget.DatePicker;
 import androidx.annotation.Nullable;
@@ -56,37 +56,52 @@ public class DatePickerDialogFragment extends DialogFragment {
 
     DatePickerDialog dialog = null;
 
-    switch (mode) {
-      case CALENDAR:
-        dialog =
-            new DismissableDatePickerDialog(
-                activityContext,
-                activityContext
-                    .getResources()
-                    .getIdentifier(
-                        "CalendarDatePickerDialog", "style", activityContext.getPackageName()),
-                onDateSetListener,
-                year,
-                month,
-                day);
-        break;
-      case SPINNER:
-        dialog =
-            new DismissableDatePickerDialog(
-                activityContext,
-                android.R.style.Theme_Holo_Light_Dialog,
-                onDateSetListener,
-                year,
-                month,
-                day);
-        dialog
-            .getWindow()
-            .setBackgroundDrawable(new ColorDrawable(android.graphics.Color.TRANSPARENT));
-        break;
-      case DEFAULT:
-        dialog =
-            new DismissableDatePickerDialog(activityContext, onDateSetListener, year, month, day);
-        break;
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+      switch (mode) {
+        case CALENDAR:
+          dialog =
+              new DismissableDatePickerDialog(
+                  activityContext,
+                  activityContext
+                      .getResources()
+                      .getIdentifier(
+                          "CalendarDatePickerDialog", "style", activityContext.getPackageName()),
+                  onDateSetListener,
+                  year,
+                  month,
+                  day);
+          break;
+        case SPINNER:
+          dialog =
+              new DismissableDatePickerDialog(
+                  activityContext,
+                  android.R.style.Theme_Holo_Light_Dialog,
+                  onDateSetListener,
+                  year,
+                  month,
+                  day);
+          dialog
+              .getWindow()
+              .setBackgroundDrawable(new ColorDrawable(android.graphics.Color.TRANSPARENT));
+          break;
+        case DEFAULT:
+          dialog =
+              new DismissableDatePickerDialog(activityContext, onDateSetListener, year, month, day);
+          break;
+      }
+    } else {
+      dialog =
+          new DismissableDatePickerDialog(activityContext, onDateSetListener, year, month, day);
+
+      switch (mode) {
+        case CALENDAR:
+          dialog.getDatePicker().setCalendarViewShown(true);
+          dialog.getDatePicker().setSpinnersShown(false);
+          break;
+        case SPINNER:
+          dialog.getDatePicker().setCalendarViewShown(false);
+          break;
+      }
     }
 
     final DatePicker datePicker = dialog.getDatePicker();

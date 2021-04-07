@@ -1,15 +1,15 @@
-/*
+/**
  * Copyright (c) Facebook, Inc. and its affiliates.
  *
- * This source code is licensed under the MIT license found in the
- * LICENSE file in the root directory of this source tree.
+ * <p>This source code is licensed under the MIT license found in the LICENSE file in the root
+ * directory of this source tree.
  */
-
 package com.facebook.react.views.drawer.events;
 
 import com.facebook.react.bridge.Arguments;
 import com.facebook.react.bridge.WritableMap;
 import com.facebook.react.uimanager.events.Event;
+import com.facebook.react.uimanager.events.RCTEventEmitter;
 
 public class DrawerStateChangedEvent extends Event<DrawerStateChangedEvent> {
 
@@ -17,13 +17,8 @@ public class DrawerStateChangedEvent extends Event<DrawerStateChangedEvent> {
 
   private final int mDrawerState;
 
-  @Deprecated
   public DrawerStateChangedEvent(int viewId, int drawerState) {
-    this(-1, viewId, drawerState);
-  }
-
-  public DrawerStateChangedEvent(int surfaceId, int viewId, int drawerState) {
-    super(surfaceId, viewId);
+    super(viewId);
     mDrawerState = drawerState;
   }
 
@@ -43,7 +38,11 @@ public class DrawerStateChangedEvent extends Event<DrawerStateChangedEvent> {
   }
 
   @Override
-  protected WritableMap getEventData() {
+  public void dispatch(RCTEventEmitter rctEventEmitter) {
+    rctEventEmitter.receiveEvent(getViewTag(), getEventName(), serializeEventData());
+  }
+
+  private WritableMap serializeEventData() {
     WritableMap eventData = Arguments.createMap();
     eventData.putDouble("drawerState", getDrawerState());
     return eventData;

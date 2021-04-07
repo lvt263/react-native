@@ -3,9 +3,7 @@ load("//tools/build_defs/oss:rn_defs.bzl", "react_native_dep", "react_native_tar
 rn_android_library(
     name = "picker",
     srcs = glob(["**/*.java"]),
-    autoglob = False,
     is_androidx = True,
-    labels = ["supermodule:xplat/default/public.react_native.infra"],
     provided_deps = [
         react_native_dep("third-party/android/androidx:annotation"),
         react_native_dep("third-party/android/androidx:appcompat"),
@@ -25,6 +23,5 @@ rn_android_library(
         react_native_target("java/com/facebook/react/module/annotations:annotations"),
         react_native_target("java/com/facebook/react/uimanager:uimanager"),
         react_native_target("java/com/facebook/react/uimanager/annotations:annotations"),
-        react_native_target("java/com/facebook/react/viewmanagers:viewmanagers"),
     ],
 )

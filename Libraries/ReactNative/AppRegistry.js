@@ -7,6 +7,7 @@
  * @flow
  * @format
  */
+'use strict';
 
 const BatchedBridge = require('../BatchedBridge/BatchedBridge');
 const BugReporting = require('../BugReporting/BugReporting');
@@ -16,14 +17,14 @@ const SceneTracker = require('../Utilities/SceneTracker');
 const infoLog = require('../Utilities/infoLog');
 const invariant = require('invariant');
 const renderApplication = require('./renderApplication');
+const createPerformanceLogger = require('../Utilities/createPerformanceLogger');
 import type {IPerformanceLogger} from '../Utilities/createPerformanceLogger';
 
-import createPerformanceLogger from '../Utilities/createPerformanceLogger';
 import NativeHeadlessJsTaskSupport from './NativeHeadlessJsTaskSupport';
 import HeadlessJsTaskError from './HeadlessJsTaskError';
 
 type Task = (taskData: any) => Promise<void>;
-export type TaskProvider = () => Task;
+type TaskProvider = () => Task;
 type TaskCanceller = () => void;
 type TaskCancelProvider = () => TaskCanceller;
 
@@ -37,18 +38,17 @@ export type AppConfig = {
   component?: ComponentProvider,
   run?: Function,
   section?: boolean,
-  ...
 };
 export type Runnable = {
   component?: ComponentProvider,
   run: Function,
-  ...
 };
-export type Runnables = {[appKey: string]: Runnable, ...};
+export type Runnables = {
+  [appKey: string]: Runnable,
+};
 export type Registry = {
   sections: Array<string>,
   runnables: Runnables,
-  ...
 };
 export type WrapperComponentProvider = any => React$ComponentType<*>;
 
@@ -62,20 +62,20 @@ let componentProviderInstrumentationHook: ComponentProviderInstrumentationHook =
 ) => component();
 
 let wrapperComponentProvider: ?WrapperComponentProvider;
-let showArchitectureIndicator = false;
+let showFabricIndicator = false;
 
 /**
  * `AppRegistry` is the JavaScript entry point to running all React Native apps.
  *
- * See https://reactnative.dev/docs/appregistry.html
+ * See http://facebook.github.io/react-native/docs/appregistry.html
  */
 const AppRegistry = {
   setWrapperComponentProvider(provider: WrapperComponentProvider) {
     wrapperComponentProvider = provider;
   },
 
-  enableArchitectureIndicator(enabled: boolean): void {
-    showArchitectureIndicator = enabled;
+  enableFabricIndicator(enabled: boolean): void {
+    showFabricIndicator = enabled;
   },
 
   registerConfig(config: Array<AppConfig>): void {
@@ -101,7 +101,7 @@ const AppRegistry = {
   /**
    * Registers an app's root component.
    *
-   * See https://reactnative.dev/docs/appregistry.html#registercomponent
+   * See http://facebook.github.io/react-native/docs/appregistry.html#registercomponent
    */
   registerComponent(
     appKey: string,
@@ -121,10 +121,8 @@ const AppRegistry = {
           appParameters.rootTag,
           wrapperComponentProvider && wrapperComponentProvider(appParameters),
           appParameters.fabric,
-          showArchitectureIndicator,
+          showFabricIndicator,
           scopedPerformanceLogger,
-          appKey === 'LogBox',
-          appKey,
         );
       },
     };
@@ -177,18 +175,16 @@ const AppRegistry = {
   /**
    * Loads the JavaScript bundle and runs the app.
    *
-   * See https://reactnative.dev/docs/appregistry.html#runapplication
+   * See http://facebook.github.io/react-native/docs/appregistry.html#runapplication
    */
   runApplication(appKey: string, appParameters: any): void {
-    if (appKey !== 'LogBox') {
-      const msg =
-        'Running "' + appKey + '" with ' + JSON.stringify(appParameters);
-      infoLog(msg);
-      BugReporting.addSource(
-        'AppRegistry.runApplication' + runCount++,
-        () => msg,
-      );
-    }
+    const msg =
+      'Running "' + appKey + '" with ' + JSON.stringify(appParameters);
+    infoLog(msg);
+    BugReporting.addSource(
+      'AppRegistry.runApplication' + runCount++,
+      () => msg,
+    );
     invariant(
       runnables[appKey] && runnables[appKey].run,
       `"${appKey}" has not been registered. This can happen if:\n` +
@@ -204,7 +200,7 @@ const AppRegistry = {
   /**
    * Stops an application when a view should be destroyed.
    *
-   * See https://reactnative.dev/docs/appregistry.html#unmountapplicationcomponentatroottag
+   * See http://facebook.github.io/react-native/docs/appregistry.html#unmountapplicationcomponentatroottag
    */
   unmountApplicationComponentAtRootTag(rootTag: number): void {
     ReactNative.unmountComponentAtNodeAndRemoveContainer(rootTag);
@@ -213,7 +209,7 @@ const AppRegistry = {
   /**
    * Register a headless task. A headless task is a bit of code that runs without a UI.
    *
-   * See https://reactnative.dev/docs/appregistry.html#registerheadlesstask
+   * See http://facebook.github.io/react-native/docs/appregistry.html#registerheadlesstask
    */
   registerHeadlessTask(taskKey: string, taskProvider: TaskProvider): void {
     this.registerCancellableHeadlessTask(taskKey, taskProvider, () => () => {
@@ -224,7 +220,7 @@ const AppRegistry = {
   /**
    * Register a cancellable headless task. A headless task is a bit of code that runs without a UI.
    *
-   * See https://reactnative.dev/docs/appregistry.html#registercancellableheadlesstask
+   * See http://facebook.github.io/react-native/docs/appregistry.html#registercancellableheadlesstask
    */
   registerCancellableHeadlessTask(
     taskKey: string,
@@ -243,7 +239,7 @@ const AppRegistry = {
   /**
    * Only called from native code. Starts a headless task.
    *
-   * See https://reactnative.dev/docs/appregistry.html#startheadlesstask
+   * See http://facebook.github.io/react-native/docs/appregistry.html#startheadlesstask
    */
   startHeadlessTask(taskId: number, taskKey: string, data: any): void {
     const taskProvider = taskProviders.get(taskKey);
@@ -281,7 +277,7 @@ const AppRegistry = {
   /**
    * Only called from native code. Cancels a headless task.
    *
-   * See https://reactnative.dev/docs/appregistry.html#cancelheadlesstask
+   * See http://facebook.github.io/react-native/docs/appregistry.html#cancelheadlesstask
    */
   cancelHeadlessTask(taskId: number, taskKey: string): void {
     const taskCancelProvider = taskCancelProviders.get(taskKey);
@@ -293,18 +289,5 @@ const AppRegistry = {
 };
 
 BatchedBridge.registerCallableModule('AppRegistry', AppRegistry);
-
-if (__DEV__) {
-  const LogBoxInspector = require('../LogBox/LogBoxInspectorContainer').default;
-  AppRegistry.registerComponent('LogBox', () => LogBoxInspector);
-} else {
-  AppRegistry.registerComponent(
-    'LogBox',
-    () =>
-      function NoOp() {
-        return null;
-      },
-  );
-}
 
 module.exports = AppRegistry;

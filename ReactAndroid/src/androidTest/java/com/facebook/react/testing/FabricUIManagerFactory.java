@@ -1,12 +1,12 @@
-/*
- * Copyright (c) Facebook, Inc. and its affiliates.
+/**
+ * Copyright (c) 2014-present, Facebook, Inc.
  *
- * This source code is licensed under the MIT license found in the
- * LICENSE file in the root directory of this source tree.
+ * <p>This source code is licensed under the MIT license found in the LICENSE file in the root
+ * directory of this source tree.
  */
-
 package com.facebook.react.testing;
 
+import com.facebook.react.bridge.JavaScriptContextHolder;
 import com.facebook.react.bridge.ReactApplicationContext;
 import com.facebook.react.bridge.UIManager;
 import com.facebook.react.uimanager.ViewManagerRegistry;
@@ -15,5 +15,7 @@ import com.facebook.react.uimanager.ViewManagerRegistry;
 public interface FabricUIManagerFactory {
 
   UIManager getFabricUIManager(
-      ReactApplicationContext reactApplicationContext, ViewManagerRegistry viewManagerRegistry);
+      ReactApplicationContext reactApplicationContext,
+      ViewManagerRegistry viewManagerRegistry,
+      JavaScriptContextHolder jsContext);
 }

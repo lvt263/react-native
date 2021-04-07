@@ -1,10 +1,9 @@
-/*
+/**
  * Copyright (c) Facebook, Inc. and its affiliates.
  *
- * This source code is licensed under the MIT license found in the
- * LICENSE file in the root directory of this source tree.
+ * <p>This source code is licensed under the MIT license found in the LICENSE file in the root
+ * directory of this source tree.
  */
-
 package com.facebook.react.devsupport;
 
 import static android.view.ViewGroup.LayoutParams.MATCH_PARENT;
@@ -29,7 +28,7 @@ import java.util.Locale;
 /** Controller to display loading messages on top of the screen. All methods are thread safe. */
 public class DevLoadingViewController {
   private static boolean sEnabled = true;
-  private final ReactInstanceDevHelper mReactInstanceManagerHelper;
+  private final ReactInstanceManagerDevHelper mReactInstanceManagerHelper;
   private @Nullable TextView mDevLoadingView;
   private @Nullable PopupWindow mDevLoadingPopup;
 
@@ -37,7 +36,8 @@ public class DevLoadingViewController {
     sEnabled = enabled;
   }
 
-  public DevLoadingViewController(ReactInstanceDevHelper reactInstanceManagerHelper) {
+  public DevLoadingViewController(
+      Context context, ReactInstanceManagerDevHelper reactInstanceManagerHelper) {
     mReactInstanceManagerHelper = reactInstanceManagerHelper;
   }
 
@@ -97,7 +97,12 @@ public class DevLoadingViewController {
             message.append(status != null ? status : "Loading");
             if (done != null && total != null && total > 0) {
               message.append(
-                  String.format(Locale.getDefault(), " %.1f%%", (float) done / total * 100));
+                  String.format(
+                      Locale.getDefault(),
+                      " %.1f%% (%d/%d)",
+                      (float) done / total * 100,
+                      done,
+                      total));
             }
             message.append("\u2026"); // `...` character
             if (mDevLoadingView != null) {

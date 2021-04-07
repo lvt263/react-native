@@ -1,10 +1,9 @@
-/*
+/**
  * Copyright (c) Facebook, Inc. and its affiliates.
  *
- * This source code is licensed under the MIT license found in the
- * LICENSE file in the root directory of this source tree.
+ * <p>This source code is licensed under the MIT license found in the LICENSE file in the root
+ * directory of this source tree.
  */
-
 package com.facebook.react.animated;
 
 import com.facebook.react.bridge.JSApplicationCausedNativeException;
@@ -42,15 +41,5 @@ import com.facebook.react.bridge.ReadableMap;
             "Illegal node ID set as an input for " + "Animated.Add node");
       }
     }
-  }
-
-  @Override
-  public String prettyPrint() {
-    return "AdditionAnimatedNode["
-        + mTag
-        + "]: input nodes: "
-        + (mInputNodes != null ? mInputNodes.toString() : "null")
-        + " - super: "
-        + super.prettyPrint();
   }
 }

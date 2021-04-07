@@ -5,15 +5,17 @@
  * LICENSE file in the root directory of this source tree.
  *
  * @format
- * @flow strict-local
+ * @flow
  */
+
+'use strict';
 
 const React = require('react');
 const StyleSheet = require('../../StyleSheet/StyleSheet');
 
 import RCTProgressViewNativeComponent from './RCTProgressViewNativeComponent';
 import type {ImageSource} from '../../Image/ImageSource';
-import type {ColorValue} from '../../StyleSheet/StyleSheet';
+import type {ColorValue} from '../../StyleSheet/StyleSheetTypes';
 import type {ViewProps} from '../View/ViewPropTypes';
 
 type Props = $ReadOnly<{|
@@ -72,4 +74,7 @@ const styles = StyleSheet.create({
 
 const ProgressViewIOSWithRef = React.forwardRef(ProgressViewIOS);
 
+/* $FlowFixMe(>=0.89.0 site=react_native_ios_fb) This comment suppresses an
+ * error found when Flow v0.89 was deployed. To see the error, delete this
+ * comment and run Flow. */
 module.exports = (ProgressViewIOSWithRef: typeof RCTProgressViewNativeComponent);

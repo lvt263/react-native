@@ -5,10 +5,12 @@
  * LICENSE file in the root directory of this source tree.
  *
  * @format
- * @flow strict-local
+ * @flow
  */
 
-import Platform from '../../Utilities/Platform';
+'use strict';
+
+const Platform = require('../../Utilities/Platform');
 
 function processDecelerationRate(
   decelerationRate: number | 'normal' | 'fast',

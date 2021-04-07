@@ -8,15 +8,15 @@
  * @flow
  */
 
-import RCTDeviceEventEmitter from '../EventEmitter/RCTDeviceEventEmitter';
-import NativeSettingsManager from './NativeSettingsManager';
-import invariant from 'invariant';
+'use strict';
 
-const subscriptions: Array<{
-  keys: Array<string>,
-  callback: ?Function,
-  ...
-}> = [];
+const RCTDeviceEventEmitter = require('../EventEmitter/RCTDeviceEventEmitter');
+
+const invariant = require('invariant');
+
+import NativeSettingsManager from './NativeSettingsManager';
+
+const subscriptions: Array<{keys: Array<string>, callback: ?Function}> = [];
 
 const Settings = {
   _settings: (NativeSettingsManager &&

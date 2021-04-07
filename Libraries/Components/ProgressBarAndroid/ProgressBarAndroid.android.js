@@ -4,16 +4,17 @@
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  *
- * @flow strict-local
+ * @flow
  * @format
  */
+
+'use strict';
 
 const React = require('react');
 
 import ProgressBarAndroidNativeComponent from './ProgressBarAndroidNativeComponent';
 
 import type {ViewProps} from '../View/ViewPropTypes';
-import type {ColorValue} from '../../StyleSheet/StyleSheet';
 
 export type ProgressBarAndroidProps = $ReadOnly<{|
   ...ViewProps,
@@ -48,7 +49,7 @@ export type ProgressBarAndroidProps = $ReadOnly<{|
   /**
    * Color of the progress bar.
    */
-  color?: ?ColorValue,
+  color?: ?string,
   /**
    * Used to locate this view in end-to-end tests.
    */
@@ -79,23 +80,10 @@ export type ProgressBarAndroidProps = $ReadOnly<{|
  * ```
  */
 const ProgressBarAndroid = (
-  {
-    styleAttr = 'Normal',
-    indeterminate = true,
-    animating = true,
-    ...restProps
-  }: ProgressBarAndroidProps,
+  props: ProgressBarAndroidProps,
   forwardedRef: ?React.Ref<typeof ProgressBarAndroidNativeComponent>,
 ) => {
-  return (
-    <ProgressBarAndroidNativeComponent
-      styleAttr={styleAttr}
-      indeterminate={indeterminate}
-      animating={animating}
-      {...restProps}
-      ref={forwardedRef}
-    />
-  );
+  return <ProgressBarAndroidNativeComponent {...props} ref={forwardedRef} />;
 };
 
 const ProgressBarAndroidToExport = React.forwardRef(ProgressBarAndroid);
@@ -103,4 +91,13 @@ const ProgressBarAndroidToExport = React.forwardRef(ProgressBarAndroid);
 /* $FlowFixMe(>=0.89.0 site=react_native_android_fb) This comment suppresses an
  * error found when Flow v0.89 was deployed. To see the error, delete this
  * comment and run Flow. */
-module.exports = (ProgressBarAndroidToExport: typeof ProgressBarAndroidNativeComponent);
+ProgressBarAndroidToExport.defaultProps = {
+  styleAttr: 'Normal',
+  indeterminate: true,
+  animating: true,
+};
+
+/* $FlowFixMe(>=0.89.0 site=react_native_android_fb) This comment suppresses an
+ * error found when Flow v0.89 was deployed. To see the error, delete this
+ * comment and run Flow. */
+module.exports = (ProgressBarAndroidToExport: ProgressBarAndroidNativeComponent);

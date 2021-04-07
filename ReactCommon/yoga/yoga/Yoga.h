@@ -1,10 +1,9 @@
 /*
  * Copyright (c) Facebook, Inc. and its affiliates.
  *
- * This source code is licensed under the MIT license found in the
- * LICENSE file in the root directory of this source tree.
+ * This source code is licensed under the MIT license found in the LICENSE
+ * file in the root directory of this source tree.
  */
-
 #pragma once
 
 #include <assert.h>
@@ -69,11 +68,6 @@ WIN_EXPORT void YGNodeInsertChild(
     YGNodeRef child,
     uint32_t index);
 
-WIN_EXPORT void YGNodeSwapChild(
-    YGNodeRef node,
-    YGNodeRef child,
-    uint32_t index);
-
 WIN_EXPORT void YGNodeRemoveChild(YGNodeRef node, YGNodeRef child);
 WIN_EXPORT void YGNodeRemoveAllChildren(YGNodeRef node);
 WIN_EXPORT YGNodeRef YGNodeGetChild(YGNodeRef node, uint32_t index);
@@ -107,7 +101,7 @@ WIN_EXPORT void YGNodeMarkDirty(YGNodeRef node);
 
 // Marks the current node and all its descendants as dirty.
 //
-// Intended to be used for Yoga benchmarks. Don't use in production, as calling
+// Intended to be used for Uoga benchmarks. Don't use in production, as calling
 // `YGCalculateLayout` will cause the recalculation of each and every node.
 WIN_EXPORT void YGNodeMarkDirtyAndPropogateToDescendants(YGNodeRef node);
 
@@ -352,8 +346,8 @@ WIN_EXPORT void YGConfigSetContext(YGConfigRef config, void* context);
 WIN_EXPORT void* YGConfigGetContext(YGConfigRef config);
 
 WIN_EXPORT float YGRoundValueToPixelGrid(
-    double value,
-    double pointScaleFactor,
+    float value,
+    float pointScaleFactor,
     bool forceCeil,
     bool forceFloor);
 

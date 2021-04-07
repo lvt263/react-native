@@ -8,9 +8,9 @@
  * @flow
  */
 
-import EventEmitter, {
-  type EventSubscription,
-} from '../vendor/emitter/EventEmitter';
+'use strict';
+
+import EventEmitter from '../vendor/emitter/EventEmitter';
 import RCTDeviceEventEmitter from '../EventEmitter/RCTDeviceEventEmitter';
 import NativeDeviceInfo, {
   type DisplayMetrics,
@@ -18,15 +18,9 @@ import NativeDeviceInfo, {
 } from './NativeDeviceInfo';
 import invariant from 'invariant';
 
-type DimensionsValue = {
-  window?: DisplayMetrics,
-  screen?: DisplayMetrics,
-  ...
-};
+type DimensionsValue = {window?: DisplayMetrics, screen?: DisplayMetrics};
 
-const eventEmitter = new EventEmitter<{
-  change: [DimensionsValue],
-}>();
+const eventEmitter = new EventEmitter();
 let dimensionsInitialized = false;
 let dimensions: DimensionsValue;
 
@@ -59,7 +53,7 @@ class Dimensions {
    *
    * @param {object} dims Simple string-keyed object of dimensions to set
    */
-  static set(dims: $ReadOnly<{[key: string]: any, ...}>): void {
+  static set(dims: $ReadOnly<{[key: string]: any}>): void {
     // We calculate the window dimensions in JS so that we don't encounter loss of
     // precision in transferring the dimensions (which could be non-integers) over
     // the bridge.
@@ -102,20 +96,17 @@ class Dimensions {
    *   are the same as the return values of `Dimensions.get('window')` and
    *   `Dimensions.get('screen')`, respectively.
    */
-  static addEventListener(
-    type: 'change',
-    handler: Function,
-  ): EventSubscription {
+  static addEventListener(type: 'change', handler: Function) {
     invariant(
       type === 'change',
       'Trying to subscribe to unknown event: "%s"',
       type,
     );
-    return eventEmitter.addListener(type, handler);
+    eventEmitter.addListener(type, handler);
   }
 
   /**
-   * @deprecated Use `remove` on the EventSubscription from `addEventListener`.
+   * Remove an event handler.
    */
   static removeEventListener(type: 'change', handler: Function) {
     invariant(
@@ -123,12 +114,11 @@ class Dimensions {
       'Trying to remove listener for unknown event: "%s"',
       type,
     );
-    // NOTE: This will report a deprecation notice via `console.error`.
     eventEmitter.removeListener(type, handler);
   }
 }
 
-let initialDims: ?$ReadOnly<{[key: string]: any, ...}> =
+let initialDims: ?$ReadOnly<{[key: string]: any}> =
   global.nativeExtensions &&
   global.nativeExtensions.DeviceInfo &&
   global.nativeExtensions.DeviceInfo.Dimensions;
@@ -140,6 +130,8 @@ if (!initialDims) {
       Dimensions.set(update);
     },
   );
+  // Can't use NativeDeviceInfo in ComponentScript because it does not support NativeModules,
+  // but has nativeExtensions instead.
   initialDims = NativeDeviceInfo.getConstants().Dimensions;
 }
 
